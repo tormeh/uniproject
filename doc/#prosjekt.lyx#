@@ -1,0 +1,1000 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Light Weight Threads
+\end_layout
+
+\begin_layout Author
+Tormod Hellen
+\end_layout
+
+\begin_layout Section
+Background
+\end_layout
+
+\begin_layout Subsection
+CSP Theory
+\end_layout
+
+\begin_layout Standard
+The Communicating Sequential Processes theory describes a way for parallel
+ computation to be done in which the traditional  race conditions 
+\end_layout
+
+\begin_layout Subsection
+Scala with Akka
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Akka
+\end_layout
+
+\end_inset
+
+
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Scala
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Quote
+\begin_inset Quotes eld
+\end_inset
+
+We believe that writing correct concurrent, fault-tolerant and scalable
+ applications is too hard.
+ Most of the time it's because we are using the wrong tools and the wrong
+ level of abstraction.
+ Akka is here to change that.
+ Using the Actor Model we raise the abstraction level and provide a better
+ platform to build scalable, resilient and responsive applications—see the
+ Reactive Manifesto for more details.
+ For fault-tolerance we adopt the "let it crash" model which the telecom
+ industry has used with great success to build applications that self-heal
+ and systems that never stop.
+ Actors also provide the abstraction for transparent distribution and the
+ basis for truly scalable and fault-tolerant applications.
+\begin_inset Quotes erd
+\end_inset
+
+ - The Akka documentation
+\end_layout
+
+\begin_layout Standard
+Scala originally had its own message passing library, but this has been
+ deprecated in favor of the Akka library, which is included as standard
+ in all recent distributions of Scala.
+ The Akka actor library is an improvement on the Scala actor library which
+ in turn is based on the Erlang actor model.
+\end_layout
+
+\begin_layout Subsubsection
+Use
+\end_layout
+
+\begin_layout Standard
+It's used like this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=Python,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+import akka.actor.Actor 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorRef 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorSystem 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.Props 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.sys 
+\end_layout
+
+\begin_layout Plain Layout
+
+import java.lang.Thread
+\end_layout
+
+\begin_layout Plain Layout
+
+//Type declarations look like this: "nameOfObject:NameOfClass" with or without
+ space.
+\end_layout
+
+\begin_layout Plain Layout
+
+class DemoActor(printstr:String) extends Actor 
+\end_layout
+
+\begin_layout Plain Layout
+
+{  
+\end_layout
+
+\begin_layout Plain Layout
+
+  def receive = 
+\end_layout
+
+\begin_layout Plain Layout
+
+  {     
+\end_layout
+
+\begin_layout Plain Layout
+
+    case other: ActorRef =>
+\end_layout
+
+\begin_layout Plain Layout
+
+    {     	
+\end_layout
+
+\begin_layout Plain Layout
+
+      println(printstr)     	
+\end_layout
+
+\begin_layout Plain Layout
+
+      other ! self      
+\end_layout
+
+\begin_layout Plain Layout
+
+    }     
+\end_layout
+
+\begin_layout Plain Layout
+
+    case _       => println("unknown message")   
+\end_layout
+
+\begin_layout Plain Layout
+
+  } 
+\end_layout
+
+\begin_layout Plain Layout
+
+}   
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+object Main extends App 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+  val system = ActorSystem("DemoSystem")     
+\end_layout
+
+\begin_layout Plain Layout
+
+  val aActor = system.actorOf(Props(classOf[DemoActor], "a"))   
+\end_layout
+
+\begin_layout Plain Layout
+
+  val bActor = system.actorOf(Props(classOf[DemoActor], "b"))   
+\end_layout
+
+\begin_layout Plain Layout
+
+  aActor ! bActor   
+\end_layout
+
+\begin_layout Plain Layout
+
+  Thread.sleep(3)   //let actors run for 3 milliseconds
+\end_layout
+
+\begin_layout Plain Layout
+
+  scala.sys.exit() 
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The output of this is a sequence of type 
+\begin_inset Quotes eld
+\end_inset
+
+a b a b a b
+\begin_inset Quotes erd
+\end_inset
+
+ with each letter on a line of its own.
+ The precise number of a's and b's printed to the console varies, but in
+ general you don't have to scroll if your console is maximised.
+ In another example, creating a million Akka actors in Scala takes about
+ 11 to 12 seconds on the lab computers.
+\end_layout
+
+\begin_layout Standard
+Synchronous messaging is neither enforced nor recommended by the Akka developers
+, but you can use bounded and blocking mailboxes.
+ A bounded and blocking mailbox will block the sender of a message if the
+ receiver's message queue is full but the minimum capacity is 1, so true
+ synchrony is not achieved.
+ To achieve true synchrony you need to manually use Await for each time
+ you send a message.
+ The reason it is not recommended is that new classes of bugs surface, something
+ that might be advantageous to a life-critical application programmer, but
+ not to the vast mayority of programmers.
+\end_layout
+
+\begin_layout Subsubsection
+Implementation
+\end_layout
+
+\begin_layout Standard
+Akka actors have many interesting properties.
+ For example, actor references are network aware, so one of our DemoActors
+ could receive a message with an ActorRef to an actor on another continent
+ and it would still respond correctly using the Akka Remote Protocol over
+ TCP.
+ Akka, unlike Erlang, enforces supervision in a similar manner as offered
+ by Erlang's OTP.
+\end_layout
+
+\begin_layout Standard
+Akka offers configurable message dispatchers, offering control over the
+ number of underlying threads and number of messages an actor can process
+ before the underlying thread jumps to the next actor.
+ The default dispatcher uses a fork-join method to run the actors, but you
+ can also use thread-pool or your own custom dispatcher.
+\end_layout
+
+\begin_layout Subsection
+Occam
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Occam
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Unfortunately it proved troublesome to get one of the Occam compilers going
+ - working with dead languages can be frustrating.
+ Fortunately, many of the facilities offered in Occam can be replicated
+ using other for example Futures and Actors in other languages.
+\end_layout
+
+\begin_layout Standard
+For example this (admittedly completely paper-programmed) Occam snippet...
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=ML,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#INCLUDE "hostio.inc" 
+\end_layout
+
+\begin_layout Plain Layout
+
+#USE "hostio.lib" 
+\end_layout
+
+\begin_layout Plain Layout
+
+PROC Main(CHAN OF SP fs,ts)
+\end_layout
+
+\begin_layout Plain Layout
+
+	SEQ
+\end_layout
+
+\begin_layout Plain Layout
+
+		PAR
+\end_layout
+
+\begin_layout Plain Layout
+
+			x = function(1)
+\end_layout
+
+\begin_layout Plain Layout
+
+			y = function(2)
+\end_layout
+
+\begin_layout Plain Layout
+
+		z = x+y
+\end_layout
+
+\begin_layout Plain Layout
+
+		so.write.string.int(fs, ts, z, 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		so.exit(fs,ts,sps.success)
+\end_layout
+
+\begin_layout Plain Layout
+
+:
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+...
+ can be replicated in Scala like this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=Python,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+import scala.concurrent._ 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.ExecutionContext.Implicits.global 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.duration._ 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.language.postfixOps
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+object occ extends App 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+	def function(i: Int) = i*i
+\end_layout
+
+\begin_layout Plain Layout
+
+	val x = Future {function(1)}   
+\end_layout
+
+\begin_layout Plain Layout
+
+	val y = Future {function(2)}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	val z = for   
+\end_layout
+
+\begin_layout Plain Layout
+
+	{     
+\end_layout
+
+\begin_layout Plain Layout
+
+		xc <- x     
+\end_layout
+
+\begin_layout Plain Layout
+
+		yc <- y   
+\end_layout
+
+\begin_layout Plain Layout
+
+	} yield xc + yc   
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	val zval = Await.result(z, 0 nanos)   
+\end_layout
+
+\begin_layout Plain Layout
+
+	println(zval) 
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+or like this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=Python,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+import scala.concurrent._ 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.ExecutionContext.Implicits.global 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.duration._ 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.language.postfixOps
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+object occ extends App 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+	def function(i: Int) = i*i
+\end_layout
+
+\begin_layout Plain Layout
+
+	val x = Future {function(1)}   
+\end_layout
+
+\begin_layout Plain Layout
+
+	val y = Future {function(2)}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	val results = List(x, y).par.map(v => Await.result(v, 0 nanos))   
+\end_layout
+
+\begin_layout Plain Layout
+
+	val zval = results(0) + results(1)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	println(zval) 
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Obviously, this is a good deal more cumbersome than the Occam syntax and
+ probably has more overhead.
+ 
+\end_layout
+
+\begin_layout Subsection
+Erlang with OTP
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Erlang
+\end_layout
+
+\end_inset
+
+
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+OTP
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Quote
+\begin_inset Quotes eld
+\end_inset
+
+Erlang is a programming language used to build massively scalable soft real-time
+ systems with requirements on high availability.
+ Some of its uses are in telecoms, banking, e-commerce, computer telephony
+ and instant messaging.
+ Erlang's runtime system has built-in support for concurrency, distribution
+ and fault tolerance.
+ [...] OTP is set of Erlang libraries and design principles providing middle-ware
+ to develop these systems.
+ It includes its own distributed database, applications to interface towards
+ other languages, debugging and release handling tools.
+\begin_inset Quotes erd
+\end_inset
+
+ - Erlang home page
+\end_layout
+
+\begin_layout Standard
+Both Erlang and OTP were developed at Ericsson, and today are used for critical
+ infrastructure worth multiples of billions, like WhatsApp.
+ OTP stands for Open Telephony Platform,
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+OTP
+\end_layout
+
+\end_inset
+
+ an archaic name not reflecting current use.
+\end_layout
+
+\begin_layout Subsubsection
+Use
+\end_layout
+
+\begin_layout Subsubsection
+Implementation
+\end_layout
+
+\begin_layout Subsection
+Go
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Go
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Quote
+\begin_inset Quotes eld
+\end_inset
+
+Go is expressive, concise, clean, and efficient.
+ Its concurrency mechanisms make it easy to write programs that get the
+ most out of multicore and networked machines, while its novel type system
+ enables flexible and modular program construction.
+ Go compiles quickly to machine code yet has the convenience of garbage
+ collection and the power of run-time reflection.
+ It's a fast, statically typed, compiled language that feels like a dynamically
+ typed, interpreted language.
+\begin_inset Quotes erd
+\end_inset
+
+ - Go documentation
+\end_layout
+
+\begin_layout Subsubsection
+Use
+\end_layout
+
+\begin_layout Subsubsection
+Implementation
+\end_layout
+
+\begin_layout Subsection
+Rust
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Rust
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Quote
+\begin_inset Quotes eld
+\end_inset
+
+Rust provides safe concurrency through a combination of lightweight, memory-isol
+ated tasks and message passing.
+ [...] Rust tasks are not the same as traditional threads: rather, they are
+ considered green threads, lightweight units of execution that the Rust
+ runtime schedules cooperatively onto a small number of operating system
+ threads.
+ On a multi-core system Rust tasks will be scheduled in parallel by default.
+ Because tasks are significantly cheaper to create than traditional threads,
+ Rust can create hundreds of thousands of concurrent tasks on a typical
+ 32-bit system.
+ In general, all Rust code executes inside a task, including the main function.
+\begin_inset Quotes erd
+\end_inset
+
+ - Rust documentation
+\end_layout
+
+\begin_layout Subsubsection
+Use
+\end_layout
+
+\begin_layout Subsubsection
+Implementation
+\end_layout
+
+\begin_layout Subsection
+Existing C message-passing implementations
+\end_layout
+
+\begin_layout Itemize
+https://github.com/tylertreat/chan
+\end_layout
+
+\begin_layout Itemize
+libthread
+\end_layout
+
+\begin_layout Itemize
+CSP for C
+\end_layout
+
+\begin_layout Subsection
+Concepts
+\end_layout
+
+\begin_layout Subsubsection
+Thread Pool
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+thread pool
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A pool of real threads
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+real threads
+\end_layout
+
+\end_inset
+
+, POSIX or otherwise, each thread able to be executed directly on the processor.
+ The notion of 
+\begin_inset Quotes eld
+\end_inset
+
+real
+\begin_inset Quotes erd
+\end_inset
+
+ thread may be extended to more abstract concurrency concepts like Java
+ threads
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Java threads
+\end_layout
+
+\end_inset
+
+, since they map directly to OS threads.
+ This pool of real threads are then used to execute lightweight or virtual
+ threads.
+ These lightweight threads
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+lightweight threads
+\end_layout
+
+\end_inset
+
+ are in reality only tasks for the real threads to execute.
+\end_layout
+
+\begin_layout Subsubsection
+Dispatching
+\end_layout
+
+\begin_layout Standard
+How work tasks are given to the real threads.
+\end_layout
+
+\begin_layout Subsubsection
+Thread-pool dispatching
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+thread-pool dispatching
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The tasks to be run are divided into groups of assumed equal load and given
+ to the real threads for execution.
+ This method is divided into first a divide and then a conquer phase.
+ If one group of tasks turns out to take longer than another the real thread
+ with the easier task group is left idling.
+\end_layout
+
+\begin_layout Subsubsection
+Fork-join dispatching
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+fork-join dispatching
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Fork-join is similar to thread-pool, but uses something called work stealing.
+ With work stealing, a thread that finishes its tasks early can 
+\begin_inset Quotes eld
+\end_inset
+
+steal
+\begin_inset Quotes erd
+\end_inset
+
+ tasks from a thread that's still busy.
+ What happens is that the tasks are grouped in a single group and pushed
+ on a stack.
+ Each real thread can then pop a group of task and either split the group
+ and push the resulting groups or execute the group.
+ In general, real threads will only execute very small groups, splitting
+ groups instead if they're too large.
+ Task groups should be considered small enough when the expected overhead
+ of worrying about their size is larger than the expected cost of a single
+ group being too large.
+ The benefit of this method over thread-pool is that the divide and conquer
+ phases are interleaved.
+ There are a lot more task groups than threads, so a misjudgment of the
+ complexity of a single task group should have smaller consequence.
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Quotes eld
+\end_inset
+
+work stealing
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+work stealing
+\end_layout
+
+\end_inset
+
+ term comes from an alternative implementation where the N real threads
+ split the tasks into N task groups which each real thread finally splits
+ and places on its own work stack.
+ Once a real thread is done with its own task groups it will try to steal
+ task groups from other real thread's stacks.
+ If there's no work to find there it will look to an input queue of work
+ common to all N real threads.
+\end_layout
+
+\begin_layout Section
+Proposal for C
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset index_print
+LatexCommand printindex
+type "idx"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

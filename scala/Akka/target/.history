@@ -1,0 +1,5 @@
+run
+kill
+run
+set scalacOptions in ThisBuild ++= Seq("-optimise")
+run
