@@ -67,6 +67,18 @@ Light Weight Threads
 Tormod Hellen
 \end_layout
 
+\begin_layout Standard
+TODO:
+\end_layout
+
+\begin_layout Itemize
+Differences between CSP and actor model/Akka
+\end_layout
+
+\begin_layout Itemize
+verify A waits on B and B waits on A is really solved by Akka
+\end_layout
+
 \begin_layout Section
 Background
 \end_layout
@@ -77,7 +89,10 @@ CSP Theory
 
 \begin_layout Standard
 The Communicating Sequential Processes theory describes a way for parallel
- computation to be done in which the traditional  race conditions 
+ computation to be done in which the traditional shared-memory errors like
+ race conditions are not possible.
+ CSP introduces processes and events.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -328,6 +343,22 @@ Synchronous messaging is neither enforced nor recommended by the Akka developers
  not to the vast mayority of programmers.
 \end_layout
 
+\begin_layout Standard
+In an aAkka, futures are used by default to avoid blocking when waiting
+ for a response, effectively allowing an actor to process several messages
+ concurrently, if it needs to.
+ This dramatically increases the complexity required to produce a deadlock,
+ and does away with the classical 
+\begin_inset Quotes eld
+\end_inset
+
+A waits on B and B waits on A
+\begin_inset Quotes erd
+\end_inset
+
+ example entirely.
+\end_layout
+
 \begin_layout Subsubsection
 Implementation
 \end_layout
@@ -443,7 +474,14 @@ PROC Main(CHAN OF SP fs,ts)
 
 \begin_layout Standard
 ...
- can be replicated in Scala like this:
+ can be replicated in Scala like this using futures:
+\begin_inset CommandInset label
+LatexCommand label
+name "Future example"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -555,101 +593,17 @@ object occ extends App
 \end_layout
 
 \begin_layout Standard
-or like this:
-\end_layout
-
-\begin_layout Standard
-\begin_inset listings
-lstparams "language=Python,numbers=left"
-inline false
-status open
-
-\begin_layout Plain Layout
-
-import scala.concurrent._ 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.concurrent.ExecutionContext.Implicits.global 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.concurrent.duration._ 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.language.postfixOps
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-object occ extends App 
-\end_layout
-
-\begin_layout Plain Layout
-
-{   
-\end_layout
-
-\begin_layout Plain Layout
-
-	def function(i: Int) = i*i
-\end_layout
-
-\begin_layout Plain Layout
-
-	val x = Future {function(1)}   
-\end_layout
-
-\begin_layout Plain Layout
-
-	val y = Future {function(2)}
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-	val results = List(x, y).par.map(v => Await.result(v, 0 nanos))   
-\end_layout
-
-\begin_layout Plain Layout
-
-	val zval = results(0) + results(1)
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-	println(zval) 
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
-
+Obviously, this is a good deal more cumbersome than the Occam syntax and
+ probably has more overhead, but the general idea of 
+\begin_inset Quotes eld
 \end_inset
 
+do these things in parallel and then combine them
+\begin_inset Quotes erd
+\end_inset
 
-\end_layout
-
-\begin_layout Standard
-Obviously, this is a good deal more cumbersome than the Occam syntax and
- probably has more overhead.
- 
+ is alive and well, though modern replacements tend to have additional bells
+ and whistles.
 \end_layout
 
 \begin_layout Subsection
@@ -699,6 +653,7 @@ Erlang is a programming language used to build massively scalable soft real-time
 \begin_layout Standard
 Both Erlang and OTP were developed at Ericsson, and today are used for critical
  infrastructure worth multiples of billions, like WhatsApp.
+ Insert snarky remark about capitalism here.
  OTP stands for Open Telephony Platform,
 \begin_inset Index idx
 status open
@@ -795,12 +750,30 @@ ated tasks and message passing.
  - Rust documentation
 \end_layout
 
+\begin_layout Standard
+Rust is the newest and hottest language to be investigated here.
+ Developed by Mozilla as a replacement for C++, its spec is not even stable
+ yet, but optional garbage collection and embeddability makes it very relevant
+ for the embedded engineer of the near future.
+\end_layout
+
 \begin_layout Subsubsection
 Use
 \end_layout
 
+\begin_layout Standard
+Rust uses channels, futures and immutable copies.
+\end_layout
+
 \begin_layout Subsubsection
 Implementation
+\end_layout
+
+\begin_layout Standard
+When sending a message over a channel, the data in the message will be duplicate
+d.
+ To improve efficiency, multiple tasks can share an object as if on a shared
+ heap, provided that object is immutable.
 \end_layout
 
 \begin_layout Subsection
@@ -980,6 +953,96 @@ work stealing
  task groups from other real thread's stacks.
  If there's no work to find there it will look to an input queue of work
  common to all N real threads.
+\end_layout
+
+\begin_layout Subsubsection
+Future 
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Future
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A future is an [insert value here]-value.
+ It represents the result of a computation that may or may not have finished
+ yet.
+ It's a feature for requesting a computation and getting the results (including
+ side effects) later.
+ For an example, see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Future example"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Channel 
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Channel
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A channel is a communication primitive between threads.
+ A channel, as used in Go, Rust and CSP, can have several senders and recipients.
+ Each message can typically only be received once, so multiple receivers
+ is not a broadcast mechanism, but rather a work division mechanism.
+\end_layout
+
+\begin_layout Subsubsection
+Immutability 
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Immutability
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If an object or value is immutable it means it can't be changed.
+ Depending on whom you ask, this might mean that only the object itself
+ need be unchangeable, or it could mean that the object and all the objects
+ it references are unchangeable.
+ To avoid the ambiguity, terms like 
+\begin_inset Quotes eld
+\end_inset
+
+deeply immutable
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+invariant
+\begin_inset Quotes erd
+\end_inset
+
+ ca
 \end_layout
 
 \begin_layout Section
