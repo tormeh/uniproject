@@ -3,6 +3,25 @@
 \begin_document
 \begin_header
 \textclass article
+\begin_preamble
+
+\lstdefinelanguage{scala}{
+  morekeywords={abstract,case,catch,class,def,%
+    do,else,extends,false,final,finally,%
+    for,if,implicit,import,match,mixin,%
+    new,null,object,override,package,%
+    private,protected,requires,return,sealed,%
+    super,this,throw,trait,true,try,%
+    type,val,var,while,with,yield},
+  otherkeywords={=>,<-,<\%,<:,>:,\#,@},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]"""
+}
+\end_preamble
 \use_default_options true
 \maintain_unincluded_children false
 \language english
@@ -25,6 +44,7 @@
 \bibtex_command default
 \index_command default
 \paperfontsize default
+\spacing single
 \use_hyperref false
 \papersize default
 \use_geometry false
@@ -68,22 +88,65 @@ Tormod Hellen
 \end_layout
 
 \begin_layout Standard
-TODO:
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
 \end_layout
 
-\begin_layout Itemize
-Differences between CSP and actor model/Akka
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+newpage
 \end_layout
 
-\begin_layout Itemize
-verify A waits on B and B waits on A is really solved by Akka
+\end_inset
+
+
 \end_layout
 
-\begin_layout Section
+\begin_layout Part
+Goals
+\end_layout
+
+\begin_layout Standard
+The goals of this project is to:
+\end_layout
+
+\begin_layout Enumerate
+Give a desciption of the paradigms relevant to safe concurrency
+\end_layout
+
+\begin_layout Enumerate
+Present the leading edge of implementations and other things that should
+ influence a modern concurrency abstraction framework
+\end_layout
+
+\begin_layout Enumerate
+Give an overview over how threads, channels etc.
+ are implemented in modern implementations
+\end_layout
+
+\begin_layout Enumerate
+Propose a solution for concurrency in C
+\end_layout
+
+\begin_layout Enumerate
+Prototype the solution mentioned
+\end_layout
+
+\begin_layout Part
 Background
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 CSP Theory
 \end_layout
 
@@ -95,7 +158,7 @@ The Communicating Sequential Processes theory describes a way for parallel
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Scala with Akka
 \begin_inset Index idx
 status open
@@ -150,7 +213,7 @@ Scala originally had its own message passing library, but this has been
  in turn is based on the Erlang actor model.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Use
 \end_layout
 
@@ -160,7 +223,7 @@ It's used like this:
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "language=Python,numbers=left"
+lstparams "breaklines=true,frame=lrtb,language=scala,numbers=left"
 inline false
 status open
 
@@ -340,10 +403,296 @@ Synchronous messaging is neither enforced nor recommended by the Akka developers
  you send a message.
  The reason it is not recommended is that new classes of bugs surface, something
  that might be advantageous to a life-critical application programmer, but
- not to the vast mayority of programmers.
+ not to the vast majority of programmers.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Standard
+In Akka, futures are used by default to avoid blocking when waiting for
+ a response, effectively allowing an actor to process several messages concurren
+tly, if it needs to.
+ This dramatically increases the complexity required to produce a deadlock,
+ and does away with the classical 
+\begin_inset Quotes eld
+\end_inset
+
+A waits on B and B waits on A
+\begin_inset Quotes erd
+\end_inset
+
+ example entirely.
+ For instance this program...
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language=scala,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+import akka.actor.Actor 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorRef 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorSystem 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.Props 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.sys 
+\end_layout
+
+\begin_layout Plain Layout
+
+import java.lang.Thread 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.collection.mutable.ArrayBuffer 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.util.Random 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.util.Timeout 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent._ 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.ExecutionContext.Implicits.global 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.language.postfixOps 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.pattern.ask import scala.util.{Failure, Success}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+//Type declarations look like this: "nameOfObject:NameOfClass" with or without
+ space.
+\end_layout
+
+\begin_layout Plain Layout
+
+class LockingActor(printstr:String) extends Actor 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+	var othermessagesanswered:Int = 0   
+\end_layout
+
+\begin_layout Plain Layout
+
+	def receive =    
+\end_layout
+
+\begin_layout Plain Layout
+
+	{     
+\end_layout
+
+\begin_layout Plain Layout
+
+		case other: ActorRef =>     
+\end_layout
+
+\begin_layout Plain Layout
+
+		{      
+\end_layout
+
+\begin_layout Plain Layout
+
+			val response = other.ask("please reply")(50000)    //ask for response
+ with timeout of 50 seconds   
+\end_layout
+
+\begin_layout Plain Layout
+
+			response onComplete        
+\end_layout
+
+\begin_layout Plain Layout
+
+			{          
+\end_layout
+
+\begin_layout Plain Layout
+
+				case Success(result) => println("success: " + result)         
+\end_layout
+
+\begin_layout Plain Layout
+
+				case Failure(failure) => println(failure)       
+\end_layout
+
+\begin_layout Plain Layout
+
+			}       
+\end_layout
+
+\begin_layout Plain Layout
+
+			othermessagesanswered += 1       
+\end_layout
+
+\begin_layout Plain Layout
+
+			println(printstr + ": " + othermessagesanswered.toString())     
+\end_layout
+
+\begin_layout Plain Layout
+
+		}     
+\end_layout
+
+\begin_layout Plain Layout
+
+		case "please reply" =>     
+\end_layout
+
+\begin_layout Plain Layout
+
+		{       
+\end_layout
+
+\begin_layout Plain Layout
+
+			sender() ! "this is a reply"     
+\end_layout
+
+\begin_layout Plain Layout
+
+		}     
+\end_layout
+
+\begin_layout Plain Layout
+
+	} 
+\end_layout
+
+\begin_layout Plain Layout
+
+}   
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+object Main extends App 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+    val system = ActorSystem("DemoSystem")       
+\end_layout
+
+\begin_layout Plain Layout
+
+	val aActor = system.actorOf(Props(classOf[LockingActor], "a"))       
+\end_layout
+
+\begin_layout Plain Layout
+
+	val bActor = system.actorOf(Props(classOf[LockingActor], "b"))       
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (x <- 0 to 100000)       
+\end_layout
+
+\begin_layout Plain Layout
+
+	{        
+\end_layout
+
+\begin_layout Plain Layout
+
+		println(x)         
+\end_layout
+
+\begin_layout Plain Layout
+
+		Future{ aActor ! bActor }         
+\end_layout
+
+\begin_layout Plain Layout
+
+		Future{ bActor ! aActor }              
+\end_layout
+
+\begin_layout Plain Layout
+
+	} 
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+...
+ will not deadlock.
+ Moreover, the two actors will not even be in synchrony.
+ Since they wait for each other with futures, they're not really waiting
+ at all!
+\end_layout
+
+\begin_layout Subsection
 Implementation
 \end_layout
 
@@ -366,28 +715,12 @@ Akka offers configurable message dispatchers, offering control over the
 \end_layout
 
 \begin_layout Standard
-In Akka, futures are used by default to avoid blocking when waiting for
- a response, effectively allowing an actor to process several messages concurren
-tly, if it needs to.
- This dramatically increases the complexity required to produce a deadlock,
- and does away with the classical 
-\begin_inset Quotes eld
-\end_inset
-
-A waits on B and B waits on A
-\begin_inset Quotes erd
-\end_inset
-
- example entirely.
-\end_layout
-
-\begin_layout Standard
 Akka actors send messages as references by default, and unfortunately neither
  Java nor Scala enforces immutability of the underlying objects.
  To work around this, Akka provides optional deep copying of all messages.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Occam
 \begin_inset Index idx
 status open
@@ -414,7 +747,7 @@ For example this (admittedly completely paper-programmed) Occam snippet...
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "language=ML,numbers=left"
+lstparams "frame=lrtb,language=ML,numbers=left"
 inline false
 status open
 
@@ -492,7 +825,7 @@ name "Future example"
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "language=Python,numbers=left"
+lstparams "frame=lrtb,language=scala,numbers=left"
 inline false
 status open
 
@@ -608,11 +941,11 @@ do these things in parallel and then combine them
 \begin_inset Quotes erd
 \end_inset
 
- is alive and well, though modern replacements tend to have additional bells
- and whistles.
+ is alive and well, though modern replacements tend to be less streamlined
+ for this purpose and have additional bells and whistles.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Erlang with OTP
 \begin_inset Index idx
 status open
@@ -673,15 +1006,196 @@ OTP
  an archaic name not reflecting current use.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Use
 \end_layout
 
-\begin_layout Subsubsection
-Implementation
+\begin_layout Standard
+copy-on-send
+\end_layout
+
+\begin_layout Standard
+state as recursion argument
+\end_layout
+
+\begin_layout Standard
+flushing (timeout 0)
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language=erlang,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+-module(kitchen).
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+-compile(export_all).
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+fridge2(FoodList) ->     
+\end_layout
+
+\begin_layout Plain Layout
+
+	receive         
+\end_layout
+
+\begin_layout Plain Layout
+
+		{From, {store, Food}} ->             
+\end_layout
+
+\begin_layout Plain Layout
+
+			From ! {self(), ok},             
+\end_layout
+
+\begin_layout Plain Layout
+
+			fridge2([Food|FoodList]);         
+\end_layout
+
+\begin_layout Plain Layout
+
+		{From, {take, Food}} ->             
+\end_layout
+
+\begin_layout Plain Layout
+
+			case lists:member(Food, FoodList) of                 
+\end_layout
+
+\begin_layout Plain Layout
+
+				true ->                     
+\end_layout
+
+\begin_layout Plain Layout
+
+					From ! {self(), {ok, Food}},                     
+\end_layout
+
+\begin_layout Plain Layout
+
+					fridge2(lists:delete(Food, FoodList));                 
+\end_layout
+
+\begin_layout Plain Layout
+
+				false ->                     
+\end_layout
+
+\begin_layout Plain Layout
+
+					From ! {self(), not_found},                     
+\end_layout
+
+\begin_layout Plain Layout
+
+					fridge2(FoodList)             
+\end_layout
+
+\begin_layout Plain Layout
+
+				end;         
+\end_layout
+
+\begin_layout Plain Layout
+
+		terminate ->             
+\end_layout
+
+\begin_layout Plain Layout
+
+			ok     
+\end_layout
+
+\begin_layout Plain Layout
+
+	end.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+store(Pid, Food) ->     
+\end_layout
+
+\begin_layout Plain Layout
+
+	Pid ! {self(), {store, Food}},     
+\end_layout
+
+\begin_layout Plain Layout
+
+	receive         
+\end_layout
+
+\begin_layout Plain Layout
+
+		{Pid, Msg} -> Msg     
+\end_layout
+
+\begin_layout Plain Layout
+
+	end.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+take(Pid, Food) ->     
+\end_layout
+
+\begin_layout Plain Layout
+
+	Pid ! {self(), {take, Food}},     
+\end_layout
+
+\begin_layout Plain Layout
+
+	receive         
+\end_layout
+
+\begin_layout Plain Layout
+
+		{Pid, Msg} -> Msg     
+\end_layout
+
+\begin_layout Plain Layout
+
+	end.
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
+Implementation
+\end_layout
+
+\begin_layout Section
 Go
 \begin_inset Index idx
 status open
@@ -713,15 +1227,15 @@ Go is expressive, concise, clean, and efficient.
  - Go documentation
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Use
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Implementation
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Rust
 \begin_inset Index idx
 status open
@@ -758,20 +1272,166 @@ ated tasks and message passing.
 
 \begin_layout Standard
 Rust is the newest and hottest language to be investigated here.
- Developed by Mozilla as a replacement for C++, its spec is not even stable
- yet, but optional garbage collection and embeddability makes it very relevant
- for the embedded engineer of the near future.
+ Developed by Mozilla as a replacement for C++, its 1.0 spec is not even
+ stable yet, but optional garbage collection and embeddability makes it
+ very relevant for the embedded engineer of the near future.
+ Semicolons mandatory.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Use
 \end_layout
 
 \begin_layout Standard
 Rust uses channels, futures and immutable copies.
+ Channels are multi-sender, multi-receiver affairs, CSP-style:
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+fn main() 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+	let (tx, rx) = channel();   
+\end_layout
+
+\begin_layout Plain Layout
+
+	let txclone = tx.clone();
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	//proc denotes an anonymous function with function body being the stuff
+ behind "proc()"
+\end_layout
+
+\begin_layout Plain Layout
+
+	spawn(proc() tx.send("message"));
+\end_layout
+
+\begin_layout Plain Layout
+
+	spawn(proc() txclone.send("another message"));      
+\end_layout
+
+\begin_layout Plain Layout
+
+	spawn(proc() println!("{:s}, {:s}" ,rx.recv(), rx.recv()) ); 
+\end_layout
+
+\begin_layout Plain Layout
+
+} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Above, an example of how a two-sender single-receiver program is written.
+ Now, the future
+\begin_inset CommandInset label
+LatexCommand label
+name "Future example2"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+use std::sync::Future;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+fn main()  
+\end_layout
+
+\begin_layout Plain Layout
+
+{      
+\end_layout
+
+\begin_layout Plain Layout
+
+	fn fib(n: u64) -> u64    
+\end_layout
+
+\begin_layout Plain Layout
+
+	{     
+\end_layout
+
+\begin_layout Plain Layout
+
+		// lengthy computation returning an uint     
+\end_layout
+
+\begin_layout Plain Layout
+
+		12586269025   
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	let mut delayed_fib = Future::spawn(proc() fib(50)); 
+\end_layout
+
+\begin_layout Plain Layout
+
+	println!("fib(50) = {}", delayed_fib.get());
+\end_layout
+
+\begin_layout Plain Layout
+
+} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Implementation
 \end_layout
 
@@ -782,7 +1442,19 @@ d.
  heap, provided that the object is immutable.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
+Esterel
+\end_layout
+
+\begin_layout Section
+Simulink
+\end_layout
+
+\begin_layout Section
+Modelica
+\end_layout
+
+\begin_layout Section
 Existing C message-passing implementations
 \end_layout
 
@@ -798,11 +1470,11 @@ libthread
 CSP for C
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Concepts
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Thread Pool
 \begin_inset Index idx
 status open
@@ -863,7 +1535,7 @@ lightweight threads
  are in reality only tasks for the real threads to execute.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Dispatching
 \end_layout
 
@@ -871,7 +1543,7 @@ Dispatching
 How work tasks are given to the real threads.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Thread-pool dispatching
 \begin_inset Index idx
 status open
@@ -893,7 +1565,7 @@ The tasks to be run are divided into groups of assumed equal load and given
  with the easier task group is left idling.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Fork-join dispatching
 \begin_inset Index idx
 status open
@@ -961,7 +1633,7 @@ work stealing
  common to all N real threads.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Future 
 \begin_inset Index idx
 status open
@@ -981,10 +1653,17 @@ A future is an [insert value here]-value.
  yet.
  It's a feature for requesting a computation and getting the results (including
  side effects) later.
- For an example, see 
+ For examples, see 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "Future example"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Future example2"
 
 \end_inset
 
@@ -992,7 +1671,7 @@ reference "Future example"
  
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Channel 
 \begin_inset Index idx
 status open
@@ -1013,7 +1692,7 @@ A channel is a communication primitive between threads.
  is not a broadcast mechanism, but rather a work division mechanism.
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Immutability 
 \begin_inset Index idx
 status open
@@ -1054,7 +1733,47 @@ invariant
 \end_layout
 
 \begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+The popular approaches taken to concurrency in modern languages can be roughly
+ divided into two: The actor model and CSP.
+ The two approaches come from different mindsets and priorities.
+ Users of the actor model often use it to create distributed, paralell,
+ fault-tolerant systems.
+ Users of CSP often want lower-level concurrency mechanisms that are easier
+ to reason about and more predictable.
+ 
+\end_layout
+
+\begin_layout Paragraph
+The differences between CSP and actor model
+\end_layout
+
+\begin_layout Itemize
+CSP threads are anonymous, actors are named.
+\end_layout
+
+\begin_layout Itemize
+CSP communication is synchronous, actor communication is asynchronous.
+\end_layout
+
+\begin_layout Itemize
+CSP communication is multi-sender, multi-receiver, actor communication is
+ one-to-one.
+\end_layout
+
+\begin_layout Part
 Proposal for C
+\end_layout
+
+\begin_layout Standard
+A recurring theme in discussing these topics online seems to be a need for
+ predictability.
+ POSIX threads are not predictable, but are or may be perceived as more
+ predictable than lightweight threads with lots of stuff happening underneath
+ in a non-obvious manner.
 \end_layout
 
 \begin_layout Standard
@@ -1065,6 +1784,16 @@ type "idx"
 \end_inset
 
 
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-2"
+
+\end_inset
+
+http://doc.rust-lang.org/0.11.0/guide-tasks.html
 \end_layout
 
 \end_body

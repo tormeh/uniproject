@@ -1,12 +1,11 @@
 fn main()
 {
-  // Print something profound in a different task using a named function
-  fn print_message() { println!("I am running in a different task!"); }
-  spawn(print_message);
+  let (tx, rx) = channel();
+  let txclone = tx.clone();
 
-  // Print something profound in a different task using a `proc` expression
-  // The `proc` expression evaluates to an (unnamed) owned closure.
-  // That closure will call `println!(...)` when the spawned task runs.
+  spawn(proc() tx.send("message"));
+
+  spawn(proc() txclone.send("another message"));
   
-  spawn(proc() println!("I am also running in a different task!") );
+  spawn(proc() println!("{:s}, {:s}" ,rx.recv(), rx.recv()) );
 }
