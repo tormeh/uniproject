@@ -1,4 +1,4 @@
-[0m[[0minfo[0m] [0mUpdating {file:/home/tormod/Documents/skole/fall2014/prosjekt/scala/}scala...[0m
+[0m[[0minfo[0m] [0mUpdating {file:/home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/}akka...[0m
 [0m[[0mdebug[0m] [0m:: resolving dependencies :: demo#demo_2.11;1.0[0m
 [0m[[0mdebug[0m] [0m	confs: [compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool][0m
 [0m[[0mdebug[0m] [0m	validate = true[0m
@@ -7,7 +7,7 @@
 [0m[[0mdebug[0m] [0m== resolving dependencies for demo#demo_2.11;1.0 [compile][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies demo#demo_2.11;1.0->org.scala-lang#scala-library;2.11.2 [compile->default(compile)][0m
 [0m[[0minfo[0m] [0mResolving org.scala-lang#scala-library;2.11.2 ...[0m
-[0m[[0mdebug[0m] [0msbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@74effb5c[0m
+[0m[[0mdebug[0m] [0msbt-chain: Checking cache for: sbt.ivyint.MergedDescriptors@5719b013[0m
 [0m[[0mdebug[0m] [0msbt-chain: module revision found in cache: org.scala-lang#scala-library;2.11.2[0m
 [0m[[0mdebug[0m] [0m	local: revision in cache: org.scala-lang#scala-library;2.11.2[0m
 [0m[[0mdebug[0m] [0m	found org.scala-lang#scala-library;2.11.2 in sbt-chain[0m
@@ -18,19 +18,9 @@
 [0m[[0mdebug[0m] [0m== resolving dependencies demo#demo_2.11;1.0->com.typesafe.akka#akka-actor_2.11;2.3.6 [compile->default(compile)][0m
 [0m[[0minfo[0m] [0mResolving com.typesafe.akka#akka-actor_2.11;2.3.6 ...[0m
 [0m[[0mdebug[0m] [0msbt-chain: Checking cache for: dependency: com.typesafe.akka#akka-actor_2.11;2.3.6 {compile=[default(compile)]}[0m
-[0m[[0mdebug[0m] [0m		tried /home/tormod/.ivy2/local/com.typesafe.akka/akka-actor_2.11/2.3.6/ivys/ivy.xml[0m
-[0m[[0mdebug[0m] [0m	local: no ivy file found for com.typesafe.akka#akka-actor_2.11;2.3.6[0m
-[0m[[0mdebug[0m] [0m		tried http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.pom[0m
-[0m[[0mdebug[0m] [0m	public: found md file for com.typesafe.akka#akka-actor_2.11;2.3.6[0m
-[0m[[0mdebug[0m] [0m		=> http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.pom (2.3.6)[0m
-[0m[[0mdebug[0m] [0mdownloading http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.pom ...[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.pom[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.pom.sha1[0m
-[0m[[0mdebug[0m] [0msha1 OK for http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.pom[0m
-[0m[[0mdebug[0m] [0m	[SUCCESSFUL ] com.typesafe.akka#akka-actor_2.11;2.3.6!akka-actor_2.11.pom(pom.original) (657ms)[0m
-[0m[[0mdebug[0m] [0m		tried /home/tormod/.ivy2/local/com.typesafe.akka/akka-actor_2.11/2.3.6/jars/akka-actor_2.11.jar[0m
-[0m[[0mdebug[0m] [0m		tried http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.jar[0m
-[0m[[0mdebug[0m] [0m	found com.typesafe.akka#akka-actor_2.11;2.3.6 in public[0m
+[0m[[0mdebug[0m] [0msbt-chain: module revision found in cache: com.typesafe.akka#akka-actor_2.11;2.3.6[0m
+[0m[[0mdebug[0m] [0m	local: revision in cache: com.typesafe.akka#akka-actor_2.11;2.3.6[0m
+[0m[[0mdebug[0m] [0m	found com.typesafe.akka#akka-actor_2.11;2.3.6 in sbt-chain[0m
 [0m[[0mdebug[0m] [0m== resolving dependencies demo#demo_2.11;1.0->com.typesafe.akka#akka-actor_2.11;2.3.6 [compile->runtime][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies demo#demo_2.11;1.0->com.typesafe.akka#akka-actor_2.11;2.3.6 [compile->compile][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies com.typesafe.akka#akka-actor_2.11;2.3.6->org.scala-lang#scala-library;2.11.2 [compile->master(*)][0m
@@ -40,19 +30,9 @@
 [0m[[0mdebug[0m] [0m== resolving dependencies com.typesafe.akka#akka-actor_2.11;2.3.6->com.typesafe#config;1.2.1 [compile->master(*)][0m
 [0m[[0minfo[0m] [0mResolving com.typesafe#config;1.2.1 ...[0m
 [0m[[0mdebug[0m] [0msbt-chain: Checking cache for: dependency: com.typesafe#config;1.2.1 {compile=[compile(*), master(*)], runtime=[runtime(*)]}[0m
-[0m[[0mdebug[0m] [0m		tried /home/tormod/.ivy2/local/com.typesafe/config/1.2.1/ivys/ivy.xml[0m
-[0m[[0mdebug[0m] [0m	local: no ivy file found for com.typesafe#config;1.2.1[0m
-[0m[[0mdebug[0m] [0m		tried http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.pom[0m
-[0m[[0mdebug[0m] [0m	public: found md file for com.typesafe#config;1.2.1[0m
-[0m[[0mdebug[0m] [0m		=> http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.pom (1.2.1)[0m
-[0m[[0mdebug[0m] [0mdownloading http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.pom ...[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.pom[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.pom.sha1[0m
-[0m[[0mdebug[0m] [0msha1 OK for http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.pom[0m
-[0m[[0mdebug[0m] [0m	[SUCCESSFUL ] com.typesafe#config;1.2.1!config.pom(pom.original) (646ms)[0m
-[0m[[0mdebug[0m] [0m		tried /home/tormod/.ivy2/local/com.typesafe/config/1.2.1/bundles/config.jar[0m
-[0m[[0mdebug[0m] [0m		tried http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.jar[0m
-[0m[[0mdebug[0m] [0m	found com.typesafe#config;1.2.1 in public[0m
+[0m[[0mdebug[0m] [0msbt-chain: module revision found in cache: com.typesafe#config;1.2.1[0m
+[0m[[0mdebug[0m] [0m	local: revision in cache: com.typesafe#config;1.2.1[0m
+[0m[[0mdebug[0m] [0m	found com.typesafe#config;1.2.1 in sbt-chain[0m
 [0m[[0mdebug[0m] [0m== resolving dependencies com.typesafe.akka#akka-actor_2.11;2.3.6->com.typesafe#config;1.2.1 [compile->compile(*)][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies com.typesafe.akka#akka-actor_2.11;2.3.6->com.typesafe#config;1.2.1 [compile->runtime(*)][0m
 [0m[[0mdebug[0m] [0m== resolving dependencies com.typesafe.akka#akka-actor_2.11;2.3.6->com.typesafe#config;1.2.1 [compile->compile][0m
@@ -265,36 +245,26 @@
 [0m[[0mdebug[0m] [0m	resolved ivy file produced in cache[0m
 [0m[[0mdebug[0m] [0m:: downloading artifacts ::[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#scala-library;2.11.2!scala-library.jar[0m
-[0m[[0mdebug[0m] [0m		tried http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.jar[0m
-[0m[[0minfo[0m] [0mdownloading http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.jar ...[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.jar[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.jar.sha1[0m
-[0m[[0mdebug[0m] [0msha1 OK for http://repo1.maven.org/maven2/com/typesafe/akka/akka-actor_2.11/2.3.6/akka-actor_2.11-2.3.6.jar[0m
-[0m[[0minfo[0m] [0m	[SUCCESSFUL ] com.typesafe.akka#akka-actor_2.11;2.3.6!akka-actor_2.11.jar (951ms)[0m
-[0m[[0mdebug[0m] [0m		tried http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.jar[0m
-[0m[[0minfo[0m] [0mdownloading http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.jar ...[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.jar[0m
-[0m[[0mdebug[0m] [0m	public: downloading http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.jar.sha1[0m
-[0m[[0mdebug[0m] [0msha1 OK for http://repo1.maven.org/maven2/com/typesafe/config/1.2.1/config-1.2.1.jar[0m
-[0m[[0minfo[0m] [0m	[SUCCESSFUL ] com.typesafe#config;1.2.1!config.jar(bundle) (561ms)[0m
+[0m[[0mdebug[0m] [0m	[NOT REQUIRED] com.typesafe.akka#akka-actor_2.11;2.3.6!akka-actor_2.11.jar[0m
+[0m[[0mdebug[0m] [0m	[NOT REQUIRED] com.typesafe#config;1.2.1!config.jar(bundle)[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#scala-compiler;2.11.2!scala-compiler.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#scala-reflect;2.11.2!scala-reflect.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang.modules#scala-xml_2.11;1.0.2!scala-xml_2.11.jar(bundle)[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang.modules#scala-parser-combinators_2.11;1.0.2!scala-parser-combinators_2.11.jar(bundle)[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] jline#jline;2.12!jline.jar[0m
-[0m[[0mdebug[0m] [0m:: resolution report :: resolve 2835ms :: artifacts dl 1526ms[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 compile produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-compile.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 runtime produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-runtime.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 test produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-test.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 provided produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-provided.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 optional produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-optional.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 compile-internal produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-compile-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 runtime-internal produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-runtime-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 test-internal produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-test-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 plugin produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-plugin.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 sources produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-sources.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 docs produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-docs.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 pom produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-pom.xml[0m
-[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 scala-tool produced in /home/tormod/Documents/skole/fall2014/prosjekt/scala/target/resolution-cache/reports/demo-demo_2.11-scala-tool.xml[0m
-[0m[[0mdebug[0m] [0m	resolve done (2835ms resolve - 1526ms download)[0m
+[0m[[0mdebug[0m] [0m:: resolution report :: resolve 397ms :: artifacts dl 54ms[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 compile produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-compile.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 runtime produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-runtime.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 test produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-test.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 provided produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-provided.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 optional produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-optional.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 compile-internal produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-compile-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 runtime-internal produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-runtime-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 test-internal produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-test-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 plugin produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-plugin.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 sources produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-sources.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 docs produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-docs.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 pom produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-pom.xml[0m
+[0m[[0mdebug[0m] [0m	report for demo#demo_2.11;1.0 scala-tool produced in /home/tormod/Documents/skole/fall2014/uniproject/scala/Akka/target/resolution-cache/reports/demo-demo_2.11-scala-tool.xml[0m
+[0m[[0mdebug[0m] [0m	resolve done (397ms resolve - 54ms download)[0m
 [0m[[0minfo[0m] [0mDone updating.[0m

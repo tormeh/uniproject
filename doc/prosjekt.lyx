@@ -147,6 +147,23 @@ Background
 \end_layout
 
 \begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+There are many models of concurrency awailable to the modern engineer.
+ The classic semaphore and its relative - lock - are the most native to
+ the way our processors look, with shared memory between thread hardware.
+ Others, like the actor model, copy a distributed architecture with several
+ computers, all with their own memory, processors and network connections.
+ Others still, like channel-concurrency, are based on formal or mathematical
+ theorems.
+ These are the three main means of concurrency, though others have been
+ introduced.
+ We will look at some of them here.
+\end_layout
+
+\begin_layout Section
 CSP Theory
 \end_layout
 
@@ -1444,6 +1461,10 @@ d.
 
 \begin_layout Section
 Esterel
+\end_layout
+
+\begin_layout Standard
+signal broadcasting
 \end_layout
 
 \begin_layout Section
