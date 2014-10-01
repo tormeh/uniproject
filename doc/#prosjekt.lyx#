@@ -156,7 +156,68 @@ There are many models of concurrency awailable to the modern engineer.
  the way our processors look, with shared memory between thread hardware.
  Others, like the actor model, copy a distributed architecture with several
  computers, all with their own memory, processors and network connections.
- Others sti
+ Others still, like channel-concurrency, are based on formal or mathematical
+ theorems.
+ These are the three main means of concurrency, though others have been
+ introduced.
+ We will look at some of them here.
+\end_layout
+
+\begin_layout Subsection
+TL;DR
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Semaphore
+\emph default
+: C, C++, Java etc.
+ implement this style of concurrency.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Channel
+\emph default
+: This is the CSP family and its derivatives.
+ Go, Rust and Occam have concurrency mechanisms based on channels.
+ Focus on being deterministic and formally analyzable.
+ Uses multi-sender, multi-receiver (first to read) synchronous channels.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Actor
+\emph default
+: Erlang and Akka implement this model.
+ Intuitively suited for making distributed systems, with a focus on fault
+ tolerance rather than fault avoidance.
+ Both implementations eschew sophisticated error recovery mechanisms and
+ instead prefer crashing and rebooting errant processes, a philosophy called
+ 
+\begin_inset Quotes eld
+\end_inset
+
+let it crash
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Pipelining: LabView uses this.
+ Each thread has one or more pipelines to and from other threads.
+ Uses one-way, single sender, single receiver message passing called pipes.
+\end_layout
+
+\begin_layout Itemize
+Broadcasting: Signals are broadcast, and threads await and send signals.
+ Esterel uses this.
 \end_layout
 
 \begin_layout Section
@@ -1460,7 +1521,25 @@ Esterel
 \end_layout
 
 \begin_layout Standard
-signal broadcasting
+Esterel may be the coolest implementation discussed here.
+ It has very limited expressive power and is not freely available, but it
+ has 
+\emph on
+exciting
+\emph default
+ properties: Threads in Esterel 
+\emph on
+execute in synchronous time
+\emph default
+.
+ Put diferently, Esterel has a global clock that threads march in lockstep
+ to! A thread has a loop and one cycle of that loop is ompleted per tick
+ of the global clock.
+ Esterel is completely deterministic; neither dynamic memory nor spawning
+ of processes are supported.
+ Signals are broadcast, and threads await and send signals.
+ A signal is either precent in a cycle or it is not; it cannot be broadcast
+ after
 \end_layout
 
 \begin_layout Section
@@ -1469,6 +1548,10 @@ Simulink
 
 \begin_layout Section
 Modelica
+\end_layout
+
+\begin_layout Section
+LabView
 \end_layout
 
 \begin_layout Section
@@ -1747,6 +1830,15 @@ invariant
  can be used for the latter.
  Objects or values that are deeply immutable can be shared between threads
  without fear of adverse effects, which make this property very attractive.
+\end_layout
+
+\begin_layout Subsection
+Pipe
+\end_layout
+
+\begin_layout Standard
+A pipe is a single sender, single receiver, one-way and asynchronous communicati
+ons channel between threads.
 \end_layout
 
 \begin_layout Section
