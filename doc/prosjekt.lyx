@@ -216,8 +216,8 @@ Pipelining: LabView uses this.
 \end_layout
 
 \begin_layout Itemize
-Synchronous execution with broadcasting: Signals are broadcast, and threads
- await and send signals.
+Synchronous execution: Threads execute in synchrony, resulting in complete
+ determinism.
  Esterel uses this.
 \end_layout
 
@@ -1544,6 +1544,11 @@ execute in synchronous time
  Programs in Esterel are deterministic finite state machines.
 \end_layout
 
+\begin_layout Standard
+Esterel is not a real-time language but since it is completely deterministic,
+ simple testing should suffice for investigating time characteristics.
+\end_layout
+
 \begin_layout Section
 Simulink
 \end_layout
@@ -1889,6 +1894,37 @@ A recurring theme in discussing these topics online seems to be a need for
  POSIX threads are not predictable, but are or may be perceived as more
  predictable than lightweight threads with lots of stuff happening underneath
  in a non-obvious manner.
+\end_layout
+
+\begin_layout Standard
+I propose an implementation that is as simple and deterministic as possible,
+ providing guarantees like 
+\begin_inset Quotes eld
+\end_inset
+
+all threads get to run a decent amout
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Exposed functionality should be something like:
+\end_layout
+
+\begin_layout Enumerate
+Parmap, a very simple mapping of one array to another of type 
+\begin_inset Formula $arrayA[x]=f(arrayB[x])$
+\end_inset
+
+ for all elements x.
+ Executed in parallel.
+\end_layout
+
+\begin_layout Enumerate
+Futures, parallel computation.
+\end_layout
+
+\begin_layout Enumerate
+Lightweight threads with channels.
 \end_layout
 
 \begin_layout Standard
