@@ -1,13 +1,30 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <threads.h>
 
-int * intmap(int array[], int arrayLength, int (*function)(int) )
+void intmap(int array[], int arrayLength, int (*function)(int) )
 {
-  int retarray[arrayLength];
   for(int i = 0; i < arrayLength; i++)
   {
-    retarray[i] = function(array[i]);
+    array[i] = function(array[i]);
   }
-  return *retarray;
+}
+
+void intparmap(int array[], int arrayLength, int (*function)(int) )
+{
+  int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+  for(int i = 0; i < arrayLength; i++)
+  {
+    array[i] = function(array[i]);
+  }
+}
+
+void intmapnew(int arraya[], int arrayb[], int arrayLength, int (*function)(int) )
+{
+  for(int i = 0; i < arrayLength; i++)
+  {
+    arraya[i] = function(arrayb[i]);
+  }
 }
 
 int square(int x)
@@ -20,13 +37,11 @@ int main()
   printf("Hello World\n");
 
   int array[3] = {1,2,3};
-  int *p;
-  int arrayb[3];
-  p = intmap(array, 3, square);
+  intmap(array, 3, square);
 
   for(int i=0; i<3; i++)
   {
-    printf("%d\n" , arrayb[i]);
+    printf("%d\n" , array[i]);
   }
   
 }
