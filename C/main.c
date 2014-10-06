@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <threads.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <assert.h>
+
 
 void intmap(int array[], int arrayLength, int (*function)(int) )
 {
@@ -13,9 +16,19 @@ void intmap(int array[], int arrayLength, int (*function)(int) )
 void intparmap(int array[], int arrayLength, int (*function)(int) )
 {
   int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
-  for(int i = 0; i < arrayLength; i++)
+  int numofthreads = numofcpus;
+  pthread_t threads[numofthreads];
+  int thread_args[numofthreads];
+  int tasksPerThread = arrayLength/numofthreads;
+
+  int startindex = 0
+  for (int i=0; i<numofthreads; i++) 
   {
-    array[i] = function(array[i]);
+
+    thread_args[i] = i;
+    printf("In main: creating thread %d\n", i);
+    rc = pthread_create(&threads[i], NULL, task_code, (void *) &thread_args[i]);
+    assert(0 == rc);
   }
 }
 
