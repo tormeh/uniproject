@@ -1553,6 +1553,10 @@ Esterel is not a real-time language but since it is completely deterministic,
 Simulink
 \end_layout
 
+\begin_layout Standard
+data transfer
+\end_layout
+
 \begin_layout Section
 Modelica
 \end_layout
@@ -1920,7 +1924,7 @@ Parmap, a very simple mapping of one array to another of type
 \end_layout
 
 \begin_layout Enumerate
-Futures, parallel computation.
+Futures, parallel computation
 \end_layout
 
 \begin_layout Enumerate

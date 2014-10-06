@@ -1897,8 +1897,8 @@ A recurring theme in discussing these topics online seems to be a need for
 \end_layout
 
 \begin_layout Standard
-I propose an implementation that is as deterministic as possible, providing
- guarantees like 
+I propose an implementation that is as simple and deterministic as possible,
+ providing guarantees like 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1916,6 +1916,15 @@ Parmap, a very simple mapping of one array to another of type
 \end_inset
 
  for all elements x.
+ Executed in parallel.
+\end_layout
+
+\begin_layout Enumerate
+Futures, parallel computation.
+\end_layout
+
+\begin_layout Enumerate
+Lightweight threads with channels.
 \end_layout
 
 \begin_layout Standard
