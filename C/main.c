@@ -38,20 +38,21 @@ void intparmap(int array[], int arrayLength, int (*function)(int) )
   pthread_t threads[numofthreads];
   int thread_args[numofthreads];
   int tasksPerThread = arrayLength/numofthreads;
-  struct ThreadArgument* threadsarguments[numofthreads];
+  printf("tasksPerThread = %d\n", tasksPerThread);
+  struct ThreadArgument threadsarguments[numofthreads];
 
   for (int i=0; i<(numofthreads-1); i++) //handle first n-1 threads
   {
     printf("intparmap\n");
-    threadsarguments[i]->iterationsStart = &array[i*tasksPerThread];
-    threadsarguments[i]->numIterations = tasksPerThread;
+    threadsarguments[i].iterationsStart = &array[i*tasksPerThread];
+    threadsarguments[i].numIterations = tasksPerThread;
     printf("intparmap\n");
-    threadsarguments[i]->function = function; 
+    threadsarguments[i].function = function; 
   }
 
-  threadsarguments[numofthreads-1]->iterationsStart = &array[(numofthreads-1)*tasksPerThread];
-  threadsarguments[numofthreads-1]->numIterations = arrayLength-(numofthreads-1)*tasksPerThread;
-  threadsarguments[numofthreads-1]->function = function; 
+  threadsarguments[numofthreads-1].iterationsStart = &array[(numofthreads-1)*tasksPerThread];
+  threadsarguments[numofthreads-1].numIterations = arrayLength-(numofthreads-1)*tasksPerThread;
+  threadsarguments[numofthreads-1].function = function; 
 
   int rc;
   for (int i=0; i<(numofthreads); i++) //start threads
@@ -87,11 +88,16 @@ int square(int x)
 int main()
 {
   printf("Hello World\n");
+  int num = 1000;
+  
+  int array[num];
+  for(int i=0; i<num; i++)
+  {
+    array[i] = i;
+  }
+  intparmap(array, num, square);
 
-  int array[3] = {1,2,3};
-  intparmap(array, 3, square);
-
-  for(int i=0; i<3; i++)
+  for(int i=0; i<num; i++)
   {
     printf("%d\n" , array[i]);
   }
