@@ -1553,6 +1553,10 @@ Esterel is not a real-time language but since it is completely deterministic,
 Simulink
 \end_layout
 
+\begin_layout Standard
+data transfer
+\end_layout
+
 \begin_layout Section
 Modelica
 \end_layout
@@ -1920,11 +1924,33 @@ Parmap, a very simple mapping of one array to another of type
 \end_layout
 
 \begin_layout Enumerate
-Futures, parallel computation.
+Futures, parallel computation
 \end_layout
 
 \begin_layout Enumerate
 Lightweight threads with channels.
+\end_layout
+
+\begin_layout Section
+How to implement lightweight threads
+\end_layout
+
+\begin_layout Standard
+Each thread can be a struct with a receive function.
+ All persistent state is held in the struct and so is known ahead of time,
+ the thread is run when there's a message it can receive and keeps being
+ run until its receive function is done and it is ready to receive a new
+ message.
+ Upside: Memory use known at compile time.
+ Downside: No context switching while thread is running.
+ Using this strategy we might need more OS threads to compensate for the
+ downside.
+ But a couple of hundred POSIX threads shouldn't be too much of a problem
+ for a modern computer.
+\end_layout
+
+\begin_layout Standard
+Alternatively we can use UNIX' ucontext API to copy 
 \end_layout
 
 \begin_layout Standard
