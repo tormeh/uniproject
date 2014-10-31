@@ -822,7 +822,7 @@ For example this (admittedly completely paper-programmed) Occam snippet...
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "frame=lrtb,language=ML,numbers=left"
+lstparams "frame=lrtb,language=ML,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -902,7 +902,7 @@ name "Future example"
 \begin_inset listings
 lstparams "frame=lrtb,language=scala,numbers=left"
 inline false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -1099,7 +1099,7 @@ flushing (timeout 0)
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=erlang,numbers=left"
+lstparams "breaklines=true,frame=lrtb,language=erlang,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -1364,7 +1364,7 @@ Rust uses channels, futures and immutable copies.
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left"
+lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -1438,7 +1438,7 @@ name "Future example2"
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left"
+lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -1897,9 +1897,11 @@ Disadvantages
 \end_layout
 
 \begin_layout Standard
-Coroutines have co-operative scheduling, but that means we're reliant on
- the programmer for parallelism.
+Coroutines have co-operative scheduling, which is cheap compared to pre-emptive
+ but that means we're reliant on the programmer for parallelism.
  Any coroutine can hog procesing capacity for as long as it likes.
+ Also, real threads don't share stack, so state held in stack somehow needs
+ to be synchronised across threads.
 \end_layout
 
 \begin_layout Subsubsection
@@ -1916,24 +1918,29 @@ I've decided to provide you with a basic example of the mechanisms used.
  It's probably the same for all functions higher up on the stack, but I
  haven't tested.
  That gave me some weird bug behaviour that was pretty hard to figure out.
- Observe that the integer variable VAR changes value without ever having
- been touched since creation in the source code.
+ It's worth pointing out that the behaviour of longjumping to a function
+ that is not the caller of the current function is 
+\emph on
+undefined
+\emph default
+; this is abuse of longjmp, but it is not unprecedented and does work.
+ An alternative would be using Boost.context from the Boost library for C++,
+ if that can be made to work.
 \end_layout
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=C,numbers=left"
+lstparams "breaklines=true,extendedchars=true,frame=lrtb,language=C,numbers=left,showstringspaces=false"
 inline false
 status open
 
 \begin_layout Plain Layout
-#include
- 
-\lang english
-<stdio.h>
+
+#include <stdio.h>
 \end_layout
 
 \begin_layout Plain Layout
+
 #include <setjmp.h>
 \end_layout
 
@@ -1942,10 +1949,12 @@ status open
 \end_layout
 
 \begin_layout Plain Layout
+
 static jmp_buf environment1;
 \end_layout
 
 \begin_layout Plain Layout
+
 static jmp_buf environment2;
 \end_layout
 
@@ -1954,100 +1963,122 @@ static jmp_buf environment2;
 \end_layout
 
 \begin_layout Plain Layout
+
 __attribute__ ((noreturn)) static void co2()
 \end_layout
 
 \begin_layout Plain Layout
+
 {
 \end_layout
 
 \begin_layout Plain Layout
+
   int VAR = 5;
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("VAR = %d
 \backslash
 n", VAR);
 \end_layout
 
 \begin_layout Plain Layout
+
   
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("In function co2 place 1
 \backslash
 n");
 \end_layout
 
 \begin_layout Plain Layout
+
   
 \end_layout
 
 \begin_layout Plain Layout
+
   int ret = setjmp(environment2);
 \end_layout
 
 \begin_layout Plain Layout
+
   if (ret == 0)
 \end_layout
 
 \begin_layout Plain Layout
+
   {
 \end_layout
 
 \begin_layout Plain Layout
+
     longjmp(environment1, 1);
 \end_layout
 
 \begin_layout Plain Layout
+
   }
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("In function co2 place 2
 \backslash
 n");
 \end_layout
 
 \begin_layout Plain Layout
+
   ret = setjmp(environment2);
 \end_layout
 
 \begin_layout Plain Layout
+
   if (ret == 0)
 \end_layout
 
 \begin_layout Plain Layout
+
   {
 \end_layout
 
 \begin_layout Plain Layout
+
     longjmp(environment1, 1);
 \end_layout
 
 \begin_layout Plain Layout
+
   }
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("In function co2 place 3
 \backslash
 n");
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("VAR = %d
 \backslash
 n", VAR);
 \end_layout
 
 \begin_layout Plain Layout
+
   longjmp(environment1, 1);
 \end_layout
 
 \begin_layout Plain Layout
+
 }
 \end_layout
 
@@ -2056,104 +2087,128 @@ n", VAR);
 \end_layout
 
 \begin_layout Plain Layout
+
 static void co1()
 \end_layout
 
 \begin_layout Plain Layout
+
 {
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("In function co1 place 1
 \backslash
 n");
 \end_layout
 
 \begin_layout Plain Layout
+
   
 \end_layout
 
 \begin_layout Plain Layout
+
   int ret = setjmp(environment1);
 \end_layout
 
 \begin_layout Plain Layout
+
   if (ret == 0)
 \end_layout
 
 \begin_layout Plain Layout
+
   {
 \end_layout
 
 \begin_layout Plain Layout
+
     co2();
 \end_layout
 
 \begin_layout Plain Layout
+
   }
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("In function co1 place 2
 \backslash
 n");
 \end_layout
 
 \begin_layout Plain Layout
+
   
 \end_layout
 
 \begin_layout Plain Layout
+
   ret = setjmp(environment1);
 \end_layout
 
 \begin_layout Plain Layout
+
   if (ret == 0)
 \end_layout
 
 \begin_layout Plain Layout
+
   {
 \end_layout
 
 \begin_layout Plain Layout
+
     longjmp(environment2, 1);
 \end_layout
 
 \begin_layout Plain Layout
+
   }
 \end_layout
 
 \begin_layout Plain Layout
+
   printf("In function co1 place 3
 \backslash
 n");
 \end_layout
 
 \begin_layout Plain Layout
+
   ret = setjmp(environment1);
 \end_layout
 
 \begin_layout Plain Layout
+
   if (ret == 0)
 \end_layout
 
 \begin_layout Plain Layout
+
   {
 \end_layout
 
 \begin_layout Plain Layout
+
     longjmp(environment2, 1);
 \end_layout
 
 \begin_layout Plain Layout
+
   }
 \end_layout
 
 \begin_layout Plain Layout
+
   return;
 \end_layout
 
 \begin_layout Plain Layout
+
 }
 \end_layout
 
@@ -2162,28 +2217,34 @@ n");
 \end_layout
 
 \begin_layout Plain Layout
+
 int main()
 \end_layout
 
 \begin_layout Plain Layout
+
 {
 \end_layout
 
 \begin_layout Plain Layout
+
     printf("Hello World
 \backslash
 n");
 \end_layout
 
 \begin_layout Plain Layout
+
     co1();
 \end_layout
 
 \begin_layout Plain Layout
+
     return 0;
 \end_layout
 
 \begin_layout Plain Layout
+
 }
 \end_layout
 
@@ -2202,7 +2263,7 @@ The output is as follows:
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left"
+lstparams "breaklines=true,frame=lrtb,numbers=left"
 inline false
 status open
 
@@ -2257,7 +2318,11 @@ VAR = 0
 \end_layout
 
 \begin_layout Standard
-As explained, coroutines can be done with jumps, but stack variables are
+Observe that the integer variable VAR changes value without ever having
+ been touched since creation in the source code.
+ Not only can we not synchronise stack state between real threads, we can't
+ even keep it within one real thread.
+ As explained, coroutines can be done with jumps, but stack variables are
  not conserved.
  At least not without using costly system calls or complicated assembly
  voodoo, which most lightweight thread libraries for C seems to use.
@@ -2266,7 +2331,7 @@ As explained, coroutines can be done with jumps, but stack variables are
 \end_layout
 
 \begin_layout Subsubsection
-How it may be used
+How it may be used to create general-purpose lightweight threads
 \end_layout
 
 \begin_layout Standard
@@ -2277,6 +2342,17 @@ Coroutines as hereto discussed might make some code more readable (especially
  Indeed, this is how goroutines work in Go, although Go hides so much of
  the manual scheduling work that its authors decided to exchange c for g
  in the name to avoid confusion.
+ 
+\end_layout
+
+\begin_layout Standard
+A possible way to use coroutines to achieve lightweight threads would be
+ to have each lightweight thread be a function pointer and a struct held
+ on heap where state can be saved.
+ The function yields each time it awaits a message and when it is done.
+ When a function yields, the executing thread goes back to the scheduler
+ and starts or resumes another function.
+ Messages are received through a special value in the struct.
 \end_layout
 
 \begin_layout Section
@@ -2287,7 +2363,7 @@ Conclusion
 The popular approaches taken to concurrency in modern languages can be roughly
  divided into two: The actor model and CSP.
  The two approaches come from different mindsets and priorities.
- Users of the actor model often use it to create distributed, paralell,
+ Users of the actor model often use it to create distributed, parallel,
  fault-tolerant systems.
  Users of CSP often want lower-level concurrency mechanisms that are easier
  to reason about and more predictable.
@@ -2356,27 +2432,6 @@ Lightweight threads with channels.
 
 \begin_layout Section
 How to implement lightweight threads
-\end_layout
-
-\begin_layout Standard
-Each thread can be a struct with a receive function.
- All persistent state is held in the struct and so is known ahead of time,
- the thread is run when there's a message it can receive and keeps being
- run until its receive function is done and it is ready to receive a new
- message.
- Upside: Memory use known at compile time.
- Downside: No context switching while thread is running.
- Using this strategy we might need more OS threads to compensate for the
- downside.
- But a couple of hundred POSIX threads shouldn't be too much of a problem
- for a modern computer.
- An additional problem with this strategy is that it might limit the way
- in which you can express your threads behaviour, requiring cumbersome implement
-ations of specific behaviour.
-\end_layout
-
-\begin_layout Standard
-Alternatively we can use UNIX' ucontext API to copy the stack 
 \end_layout
 
 \begin_layout Standard
