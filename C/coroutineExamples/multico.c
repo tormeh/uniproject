@@ -1,38 +1,68 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
+#include <stdlib.h>
 
 struct Datastruct
 {
   int counter;
+  int continuation;
 };
 
 static void printfoo(struct Datastruct *ds)
 {
-  while(true)
+  switch(ds->continuation)
   {
-    printf("foo %d\n", ds->counter);
-    ds->counter++;
-    return;
+    case 0:
+      printf("foo 0 %d\n", ds->counter);
+      ds->continuation = 1;
+      if(rand()%2 == 0)
+      {
+        return;
+      }
+    case 1:
+      printf("foo 1 %d\n", ds->counter);
+      ds->counter++;
+      ds->continuation = 0;
+      return;
   }
 }
 
 static void printbaz(struct Datastruct *ds)
 {
-  while(true)
+  switch(ds->continuation)
   {
-    printf("baz %d\n", ds->counter);
-    ds->counter++;
-    return;
+    case 0:
+      printf("baz 0 %d\n", ds->counter);
+      ds->continuation = 1;
+      if(rand()%2 == 0)
+      {
+        return;
+      }
+    case 1:
+      printf("baz 1 %d\n", ds->counter);
+      ds->counter++;
+      ds->continuation = 0;
+      return;
   }
 }
 
 static void printlol(struct Datastruct *ds)
 {
-  while(true)
+  switch(ds->continuation)
   {
-    printf("lol %d\n", ds->counter);
-    ds->counter++;
-    return;
+    case 0:
+      printf("lol 0 %d\n", ds->counter);
+      ds->continuation = 1;
+      if(rand()%2 == 0)
+      {
+        return;
+      }
+    case 1:
+      printf("lol 1 %d\n", ds->counter);
+      ds->counter++;
+      ds->continuation = 0;
+      return;
   }
 }
 
@@ -50,6 +80,7 @@ __attribute__ ((noreturn)) static void scheduler(void (*functionPointerArray[])(
 int main()
 {
   printf("Hello World\n");
+  srand((uint) time(NULL));
     
   //const int arraylen = 3;
   void (*functionPointerArray[3])();
@@ -58,9 +89,11 @@ int main()
   functionPointerArray[2] = printlol;
   
   struct Datastruct ds[3];
-  ds[0].counter = 0;
-  ds[1].counter = 0;
-  ds[2].counter = 0;
+  for(int i=0; i<3; i++)
+  {
+    ds[i].counter = 0;
+    ds[i].continuation = 0;
+  }
     
   scheduler(functionPointerArray, &ds[0], 3);
     
