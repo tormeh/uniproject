@@ -41,7 +41,7 @@ static void printfoo(struct Datastruct *ds, struct Comstruct *cs)
   {
     case 0:
       printf("foo 0 %d\n", ds->counter);
-      retsend(ds, cs, 1, 1, 10);
+      retsend(ds, cs, 1, 1, ds->counter);
       return;
     case 1:
       printf("foo 1 %d\n", ds->counter);
@@ -122,22 +122,23 @@ int main()
   printf("Hello World\n");
   srand((uint) time(NULL));
     
-  //const int arraylen = 3;
+  int arraylen = 3;
   void (*functionPointerArray[3])();
+  //void *(*functionPointerArray)() = malloc((unsigned long)arraylen*sizeof(&printfoo));
   functionPointerArray[0] = printfoo;
   functionPointerArray[1] = printbaz;
   functionPointerArray[2] = printlol;
   
-  struct Datastruct ds[3];
-  struct Comstruct cs[3];
-  for(int i=0; i<3; i++)
+  struct Datastruct *ds = malloc((unsigned long)arraylen*sizeof(struct Datastruct));
+  struct Comstruct *cs = malloc((unsigned long)arraylen*sizeof(struct Comstruct));;
+  for(int i=0; i<arraylen; i++)
   {
     ds[i].counter = 0;
     ds[i].continuation = 0;
     cs[i].ws = READY;
   }
   
-  scheduler(functionPointerArray, &ds[0], &cs[0], 3);
+  scheduler(functionPointerArray, &ds[0], &cs[0], arraylen);
     
   //return 0;
 }
