@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
+#include <pthread.h>
 
-typedef enum {READY, SENDING, RECEIVING} Waitstate;
+typedef enum {READY, SENDING, RECEIVING, FINISHED, RUNNING} Waitstate;
 
 struct Datastruct
 {
@@ -97,9 +98,13 @@ __attribute__ ((noreturn)) static void scheduler(void (*functionPointerArray[])(
   {
     for(int i=0; i<arraylen; i++)
     { 
+      //semaphore close; only one thread at a time
       if(cs[i].ws == READY)
       {
+        //ws=running
+        //semaphore open
         functionPointerArray[i](&ds[i], &cs[i]);
+        continue;
       }
       if(cs[i].ws == SENDING)
       {
@@ -110,7 +115,10 @@ __attribute__ ((noreturn)) static void scheduler(void (*functionPointerArray[])(
           cs[recipient].message = cs[sender].message;
           cs[recipient].ws = READY;
           cs[sender].ws = READY;
+          //sender.ws=running
+          //semaphore open
           functionPointerArray[i](&ds[i], &cs[i]);
+          continue;
         }
       }
     }
