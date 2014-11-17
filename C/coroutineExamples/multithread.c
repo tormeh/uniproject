@@ -3,8 +3,13 @@
 #include <time.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
+//#include <semaphore.h>
 
 typedef enum {READY, SENDING, RECEIVING, FINISHED, RUNNING} Waitstate;
+
+//sem_t sem_scheduler;
+static pthread_mutex_t sched_mutex;
 
 struct Datastruct
 {
@@ -19,20 +24,42 @@ struct Comstruct
   Waitstate ws;
 };
 
+struct ThreadArgument
+{
+  struct Datastruct *ds;
+  struct Comstruct *cs;
+  int arraylen;
+  void (*functionPointerArray[])(struct Datastruct *ds, struct Comstruct *cs);
+};
+
 static void retsend(struct Datastruct *ds, struct Comstruct *cs, int continuation, int receiver, int message)
 {
-  cs->ws = SENDING;
   cs->compartner = receiver;
   cs->message = message;
   ds->continuation = continuation;
+  cs->ws = SENDING;
   return;
 }
 
 static void retrecv(struct Datastruct *ds, struct Comstruct *cs, int continuation)
 {
-  cs->ws = RECEIVING;
   cs->message = -1;
   ds->continuation = continuation;
+  cs->ws = RECEIVING;
+  return;
+}
+
+static void ret(struct Datastruct *ds, struct Comstruct *cs)
+{
+  ds->continuation = 0;
+  cs->ws = READY;
+  return;
+}
+
+static void retcont(struct Datastruct *ds, struct Comstruct *cs, int continuation)
+{
+  ds->continuation = continuation;
+  cs->ws = READY;
   return;
 }
 
@@ -47,7 +74,7 @@ static void printfoo(struct Datastruct *ds, struct Comstruct *cs)
     case 1:
       printf("foo 1 %d\n", ds->counter);
       ds->counter++;
-      ds->continuation = 0;
+      ret(ds, cs);
       return;
   }
 }
@@ -64,7 +91,7 @@ static void printbaz(struct Datastruct *ds, struct Comstruct *cs)
       printf("baz got message with %d\n", cs->message);
       printf("baz 1 %d\n", ds->counter);
       ds->counter++;
-      ds->continuation = 0;
+      ret(ds, cs);
       return;
   }
 }
@@ -75,34 +102,37 @@ static void printlol(struct Datastruct *ds, struct Comstruct *cs)
   {
     case 0:
       printf("lol 0 %d\n", ds->counter);
-      ds->continuation = 1;
       if(rand()%2 == 0)
       {
+        retcont(ds, cs, 1);
         return;
       }
     case 1:
       printf("lol 1 %d\n", ds->counter);
       ds->counter++;
-      ds->continuation = 0;
       if (ds->counter > 10)
       {
         exit(0);
       }
+      ret(ds, cs);
       return;
   }
 }
 
 __attribute__ ((noreturn)) static void scheduler(void (*functionPointerArray[])(struct Datastruct *ds, struct Comstruct *cs), struct Datastruct *ds, struct Comstruct *cs, int arraylen)
 {
+  
   while(true)
   {
     for(int i=0; i<arraylen; i++)
     { 
-      //semaphore close; only one thread at a time
+      //sem_wait(&sem_scheduler); //semaphore close; only one thread at a time
+      pthread_mutex_lock(&sched_mutex);
       if(cs[i].ws == READY)
       {
-        //ws=running
-        //semaphore open
+        cs[i].ws = RUNNING;
+        //sem_post(&sem_scheduler); //semaphore open
+        pthread_mutex_unlock(&sched_mutex);
         functionPointerArray[i](&ds[i], &cs[i]);
         continue;
       }
@@ -114,15 +144,38 @@ __attribute__ ((noreturn)) static void scheduler(void (*functionPointerArray[])(
         {
           cs[recipient].message = cs[sender].message;
           cs[recipient].ws = READY;
-          cs[sender].ws = READY;
-          //sender.ws=running
-          //semaphore open
+          cs[sender].ws = RUNNING;
+          pthread_mutex_unlock(&sched_mutex);
+          //sem_post(&sem_scheduler); //semaphore open
           functionPointerArray[i](&ds[i], &cs[i]);
           continue;
         }
       }
     }
   }
+}
+
+__attribute__ ((noreturn)) static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, struct Comstruct *cs), struct Datastruct *ds, struct Comstruct *cs, int arraylen)
+{
+  //sem_init(&sem_scheduler, 0, 1);
+  /*int numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
+  int numofthreads = numofcpus;
+  pthread_t threads[numofthreads];
+  struct ThreadArgument ta;
+  ta.ds = ds;
+  ta.cs = cs;*/
+  
+  scheduler(functionPointerArray, &ds[0], &cs[0], arraylen);
+  
+  
+  
+  /*for (int i=0; i<numofthreads; ++i) 
+  {
+    // block until thread i completes
+    rc = pthread_join(threads[i], NULL);
+    printf("Thread %d is complete\n", i);
+    assert(0 == rc);
+  }*/
 }
 
 int main()
@@ -145,7 +198,7 @@ int main()
     cs[i].ws = READY;
   }
   
-  scheduler(functionPointerArray, &ds[0], &cs[0], arraylen);
+  coroutines(functionPointerArray, &ds[0], &cs[0], arraylen);
     
   //return 0;
 }
