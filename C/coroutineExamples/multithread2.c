@@ -26,11 +26,11 @@ struct ThreadArgument
 {
   struct Datastruct *ds;
   struct Comstruct *cs;
-  int arraylen;
-  void (**functionPointerArray)();
-  int threadid;
   pthread_mutex_t *sched_mutex;
   pthread_mutex_t *ws_mutex;
+  void (**functionPointerArray)();
+  int arraylen;
+  int threadid;
   int currentfunc;
 };
 
@@ -136,7 +136,6 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
   {
     for(int i=0; i<ta.arraylen; i++)
     { 
-      //semaphore close; only one thread at a time
       if (pthread_mutex_trylock(&ta.ws_mutex[i]) != EBUSY)
       {
         printf("thread %d has lock on %d\n", ta.threadid, i);
@@ -160,12 +159,14 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
               ta.cs[recipient].ws = READY;
               pthread_mutex_unlock(&ta.ws_mutex[recipient]);
               ta.cs[sender].ws = RUNNING;
-              //semaphore open
               ta.currentfunc = i;
               printf("thread %d runs sender %d\n", ta.threadid, i);
               ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], ta);
             }
-            //pthread_mutex_unlock(&ta.ws_mutex[recipient]);
+            else
+            {
+              pthread_mutex_unlock(&ta.ws_mutex[recipient]);
+            }
           }
           else
           {
@@ -194,7 +195,7 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
   {
     numofthreads = (long)arraylen;
   }
-  //numofthreads = 1;
+  //numofthreads = 2;
   
   pthread_t *threads = malloc((unsigned long)numofthreads*sizeof(pthread_t)); //pthread_t threads[numofthreads];
   struct ThreadArgument ta;
