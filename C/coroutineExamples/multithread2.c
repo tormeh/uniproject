@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <assert.h>
-//#include <semaphore.h>
+#include <errno.h>
 
 typedef enum {READY, SENDING, RECEIVING, FINISHED, RUNNING} Waitstate;
 
@@ -34,84 +34,76 @@ struct ThreadArgument
   int currentfunc;
 };
 
-static void retsend(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta, int continuation, int receiver, int message)
+static void retsend(struct Datastruct *ds, struct Comstruct *cs, int continuation, int receiver, int message)
 {
   cs->compartner = receiver;
   cs->message = message;
   ds->continuation = continuation;
-  pthread_mutex_lock(&ta.ws_mutex[ta.currentfunc]);
   cs->ws = SENDING;
-  pthread_mutex_unlock(&ta.ws_mutex[ta.currentfunc]);
   return;
 }
 
-static void retrecv(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta, int continuation)
+static void retrecv(struct Datastruct *ds, struct Comstruct *cs, int continuation)
 {
   cs->message = -1;
   ds->continuation = continuation;
-  pthread_mutex_lock(&ta.ws_mutex[ta.currentfunc]);
   cs->ws = RECEIVING;
-  pthread_mutex_unlock(&ta.ws_mutex[ta.currentfunc]);
   return;
 }
 
-static void retcont(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta, int continuation)
+static void retcont(struct Datastruct *ds, struct Comstruct *cs, int continuation)
 {
   ds->continuation = continuation;
-  pthread_mutex_lock(&ta.ws_mutex[ta.currentfunc]);
   cs->ws = READY;
-  pthread_mutex_unlock(&ta.ws_mutex[ta.currentfunc]);
   return;
 }
 
-static void retloop(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta)
+static void retloop(struct Datastruct *ds, struct Comstruct *cs)
 {
-  retcont(ds, cs, ta, 0);
+  retcont(ds, cs, 0);
   return;
 }
 
-static void retfin(struct Comstruct *cs, struct ThreadArgument ta)
+static void retfin(struct Comstruct *cs)
 {
-  pthread_mutex_lock(&ta.ws_mutex[ta.currentfunc]);
   cs->ws = FINISHED;
-  pthread_mutex_unlock(&ta.ws_mutex[ta.currentfunc]);
   return;
 }
 
-static void printfoo(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta)
+static void printfoo(struct Datastruct *ds, struct Comstruct *cs)
 {
   switch(ds->continuation)
   {
     case 0:
       printf("foo 0 %d\n", ds->counter);
-      retsend(ds, cs, ta, 1, 1, ds->counter);
+      retsend(ds, cs, 1, 1, ds->counter);
       return;
     case 1:
       printf("foo 1 %d\n", ds->counter);
       ds->counter++;
-      retloop(ds, cs, ta);
+      retloop(ds, cs);
       return;
   }
 }
 
-static void printbaz(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta)
+static void printbaz(struct Datastruct *ds, struct Comstruct *cs)
 {
   switch(ds->continuation)
   {
     case 0:
       printf("baz 0 %d\n", ds->counter);
-      retrecv(ds, cs, ta, 1);
+      retrecv(ds, cs, 1);
       return;
     case 1:
       printf("baz got message with %d\n", cs->message);
       printf("baz 1 %d\n", ds->counter);
       ds->counter++;
-      retloop(ds, cs, ta);
+      retloop(ds, cs);
       return;
   }
 }
 
-static void printlol(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta)
+static void printlol(struct Datastruct *ds, struct Comstruct *cs)
 { cs->ws = cs->ws;
   switch(ds->continuation)
   {
@@ -119,18 +111,18 @@ static void printlol(struct Datastruct *ds, struct Comstruct *cs, struct ThreadA
       printf("lol 0 %d\n", ds->counter);
       if(rand()%2 == 0)
       {
-        retcont(ds, cs, ta, 1);
+        retcont(ds, cs, 1);
         return;
       }
     case 1:
       printf("lol 1 %d\n", ds->counter);
       ds->counter++;
-      if (ds->counter > 10)
+      if (false /*ds->counter > 1000*/)
       {
-        retfin(cs, ta);
+        retfin(cs);
         exit(0);
       }
-      retloop(ds, cs, ta);
+      retloop(ds, cs);
       return;
   }
 }
@@ -138,50 +130,59 @@ static void printlol(struct Datastruct *ds, struct Comstruct *cs, struct ThreadA
 __attribute__ ((noreturn)) static void *scheduler(void *arg)
 {
   struct ThreadArgument ta = *(struct ThreadArgument*)arg;
+  ta.threadid = rand()%20;
+  printf("thread with random alias %d started\n", ta.threadid);
   while(true)
   {
     for(int i=0; i<ta.arraylen; i++)
     { 
       //semaphore close; only one thread at a time
-      pthread_mutex_lock((ta.sched_mutex));
-      printf("thread %d in scheduler for. WS =", ta.threadid);
-      for(int j=0; j<ta.arraylen; j++)
+      if (pthread_mutex_trylock(&ta.ws_mutex[i]) != EBUSY)
       {
-        printf("%d,", ta.cs[j].ws);
-      }
-      printf("\n");
-      if(ta.cs[i].ws == READY)
-      {
-        ta.cs[i].ws = RUNNING;
-        //semaphore open
-        pthread_mutex_unlock((ta.sched_mutex));
-        ta.currentfunc = i;
-        ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], ta);
-        continue;
-      }
-      if(ta.cs[i].ws == SENDING)
-      {
-        int sender = i;
-        int recipient = ta.cs[i].compartner;
-        if(ta.cs[recipient].ws == RECEIVING)
+        printf("thread %d has lock on %d\n", ta.threadid, i);
+        if(ta.cs[i].ws == READY)
         {
-          //pthread_mutex_lock(&ta.ws_mutex[recipient]);
-          //pthread_mutex_lock(&ta.ws_mutex[sender]);
-          ta.cs[recipient].message = ta.cs[sender].message;
-          ta.cs[recipient].ws = READY;
-          ta.cs[sender].ws = RUNNING;
-          pthread_mutex_unlock((ta.sched_mutex));
-          //semaphore open
+          ta.cs[i].ws = RUNNING;
           ta.currentfunc = i;
+          printf("thread %d runs %d\n", ta.threadid, i);
           ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], ta);
-          continue;
         }
+        else if(ta.cs[i].ws == SENDING)
+        {
+          int sender = i;
+          int recipient = ta.cs[i].compartner;
+          if (pthread_mutex_trylock(&ta.ws_mutex[recipient]) != EBUSY)
+          {
+            printf("thread %d has lock on recipient %d\n", ta.threadid, recipient);
+            if(ta.cs[recipient].ws == RECEIVING)
+            {
+              ta.cs[recipient].message = ta.cs[sender].message;
+              ta.cs[recipient].ws = READY;
+              pthread_mutex_unlock(&ta.ws_mutex[recipient]);
+              ta.cs[sender].ws = RUNNING;
+              //semaphore open
+              ta.currentfunc = i;
+              printf("thread %d runs sender %d\n", ta.threadid, i);
+              ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], ta);
+            }
+            //pthread_mutex_unlock(&ta.ws_mutex[recipient]);
+          }
+          else
+          {
+            printf("thread %d denied lock on recipient %d\n", ta.threadid, recipient);
+          }
+        }
+        pthread_mutex_unlock(&ta.ws_mutex[i]);
+      }
+      else
+      {
+        printf("thread %d denied lock on %d\n", ta.threadid, i);
       }
     }
   }
 }
 
-/*__attribute__ ((noreturn))*/ static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, struct Comstruct *cs, struct ThreadArgument ta), struct Datastruct *ds, struct Comstruct *cs, int arraylen)
+/*__attribute__ ((noreturn))*/ static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, struct Comstruct *cs), struct Datastruct *ds, struct Comstruct *cs, int arraylen)
 {
   long numofcpus = sysconf(_SC_NPROCESSORS_ONLN);
   long numofthreads;
@@ -193,6 +194,7 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
   {
     numofthreads = (long)arraylen;
   }
+  //numofthreads = 1;
   
   pthread_t *threads = malloc((unsigned long)numofthreads*sizeof(pthread_t)); //pthread_t threads[numofthreads];
   struct ThreadArgument ta;
@@ -213,7 +215,6 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
   for (int i=0; i<(numofthreads); i++) //start threads
   {
     printf("Creating thread %d\n", i);
-    ta.threadid = i;
     rc = pthread_create(&threads[i], NULL, scheduler, (void *) &ta);
     assert(0 == rc);
   }
@@ -222,7 +223,7 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
   {
     // block until thread i completes
     rc = pthread_join(threads[i], NULL);
-    printf("Thread %d is complete\n", i);
+    printf("Thread number %d is complete\n", i);
     assert(0 == rc);
   }
 }
