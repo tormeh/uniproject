@@ -1924,7 +1924,8 @@ I've decided to provide you with a basic example of the mechanisms used.
 undefined
 \emph default
 ; this is abuse of longjmp, but it is not unprecedented and does work.
- An alternative would be using Boost.context from the Boost library for C++.
+ An alternative would be using Boost.context from the Boost library for C++,
+ if that can be made to work.
 \end_layout
 
 \begin_layout Standard
@@ -2429,8 +2430,61 @@ Futures, parallel computation
 Lightweight threads with channels.
 \end_layout
 
-\begin_layout Section
+\begin_layout Part
 How to implement lightweight threads
+\end_layout
+
+\begin_layout Section
+Scheduler
+\end_layout
+
+\begin_layout Standard
+Of paramount importance in implementing lightweight threads is the scheduler.
+ Both Go and Akka use a work-stealing scheduler and this seems to be the
+ industry standard.
+ Because it's simple and I'm not very good at C programming I made a simpler
+ scheduler in which the worker threads compete for the lightweight threads.
+ For lightweights that don't do much the result is catastrophic as worker
+ threads compete for mutexes:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename lightLoadedLightThreadsDumbSched.svg
+	lyxscale 70
+	width 100text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For lightweight threads that do a fair amount of work the result is a lot
+ better:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename hevyLoadedLightThreadsDumbSched.svg
+	lyxscale 70
+	width 100text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Note that the time given on the y axis can not be compared across graphs,
+ as the amount of repetitions is different.
+ There are three lightweight threads, two of which sends messages to each
+ other.
+ That's why we speedup when moving from two to three workers is so lacklustre
+ and performance only improves until we have three threads.
+ The perfect amount of worker threads seems best determined by the programmer,
+ who knows how the light threads will communicate, and thus what the real
+ amount of paralellism is.
 \end_layout
 
 \begin_layout Standard

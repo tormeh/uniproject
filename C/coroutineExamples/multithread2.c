@@ -70,16 +70,22 @@ static void retfin(struct Comstruct *cs)
   return;
 }
 
+static void busywork()
+{
+  int j = 5; for(int i=0; i<9000; i++){j=j+i;}
+  return;
+}
+
 static void printfoo(struct Datastruct *ds, struct Comstruct *cs)
 {
   switch(ds->continuation)
   {
     case 0:
-      printf("foo 0 %d\n", ds->counter);
+      busywork();//printf("foo 0 %d\n", ds->counter);
       retsend(ds, cs, 1, 1, ds->counter);
       return;
     case 1:
-      printf("foo 1 %d\n", ds->counter);
+      busywork();//printf("foo 1 %d\n", ds->counter);
       ds->counter++;
       retloop(ds, cs);
       return;
@@ -91,13 +97,17 @@ static void printbaz(struct Datastruct *ds, struct Comstruct *cs)
   switch(ds->continuation)
   {
     case 0:
-      printf("baz 0 %d\n", ds->counter);
+      busywork();//printf("baz 0 %d\n", ds->counter);
       retrecv(ds, cs, 1);
       return;
     case 1:
-      printf("baz got message with %d\n", cs->message);
-      printf("baz 1 %d\n", ds->counter);
+      busywork();//printf("baz got message with %d\n", cs->message);
+      //printf("baz 1 %d\n", ds->counter);
       ds->counter++;
+      if (ds->counter >= 6000)
+      {
+        exit(0);
+      }
       retloop(ds, cs);
       return;
   }
@@ -108,14 +118,14 @@ static void printlol(struct Datastruct *ds, struct Comstruct *cs)
   switch(ds->continuation)
   {
     case 0:
-      printf("lol 0 %d\n", ds->counter);
+      busywork();//printf("lol 0 %d\n", ds->counter);
       if(rand()%2 == 0)
       {
         retcont(ds, cs, 1);
         return;
       }
     case 1:
-      printf("lol 1 %d\n", ds->counter);
+      busywork();//printf("lol 1 %d\n", ds->counter);
       ds->counter++;
       if (false /*ds->counter > 1000*/)
       {
@@ -131,19 +141,26 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
 {
   struct ThreadArgument ta = *(struct ThreadArgument*)arg;
   ta.threadid = rand()%20;
-  printf("thread with random alias %d started\n", ta.threadid);
+  int blocked = 0;
+  //printf("thread with random alias %d started\n", ta.threadid);
   while(true)
   {
     for(int i=0; i<ta.arraylen; i++)
-    { 
+    {
+      if (blocked > 10)
+      {
+        sleep(1);
+        blocked = 0;
+      }
       if (pthread_mutex_trylock(&ta.ws_mutex[i]) != EBUSY)
       {
-        printf("thread %d has lock on %d\n", ta.threadid, i);
+        blocked--;
+        //printf("thread %d has lock on %d\n", ta.threadid, i);
         if(ta.cs[i].ws == READY)
         {
           ta.cs[i].ws = RUNNING;
           ta.currentfunc = i;
-          printf("thread %d runs %d\n", ta.threadid, i);
+          //printf("thread %d runs %d\n", ta.threadid, i);
           ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], ta);
         }
         else if(ta.cs[i].ws == SENDING)
@@ -152,7 +169,8 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           int recipient = ta.cs[i].compartner;
           if (pthread_mutex_trylock(&ta.ws_mutex[recipient]) != EBUSY)
           {
-            printf("thread %d has lock on recipient %d\n", ta.threadid, recipient);
+            blocked--;
+            //printf("thread %d has lock on recipient %d\n", ta.threadid, recipient);
             if(ta.cs[recipient].ws == RECEIVING)
             {
               ta.cs[recipient].message = ta.cs[sender].message;
@@ -160,7 +178,7 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
               pthread_mutex_unlock(&ta.ws_mutex[recipient]);
               ta.cs[sender].ws = RUNNING;
               ta.currentfunc = i;
-              printf("thread %d runs sender %d\n", ta.threadid, i);
+              //printf("thread %d runs sender %d\n", ta.threadid, i);
               ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], ta);
             }
             else
@@ -170,14 +188,16 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           }
           else
           {
-            printf("thread %d denied lock on recipient %d\n", ta.threadid, recipient);
+            //printf("thread %d denied lock on recipient %d\n", ta.threadid, recipient);
+            blocked++;
           }
         }
         pthread_mutex_unlock(&ta.ws_mutex[i]);
       }
       else
       {
-        printf("thread %d denied lock on %d\n", ta.threadid, i);
+        //printf("thread %d denied lock on %d\n", ta.threadid, i);
+        blocked++;
       }
     }
   }
@@ -195,7 +215,7 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
   {
     numofthreads = (long)arraylen;
   }
-  //numofthreads = 2;
+  numofthreads = 32;
   
   pthread_t *threads = malloc((unsigned long)numofthreads*sizeof(pthread_t)); //pthread_t threads[numofthreads];
   struct ThreadArgument ta;
