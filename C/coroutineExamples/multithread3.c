@@ -25,6 +25,8 @@ struct Sysstruct
   int continuation;
   int compartner;
   Waitstate ws;
+  time_t waitedsince;
+  double waitfor;
 };
 
 struct ThreadArgument
@@ -77,9 +79,11 @@ static void retfin(struct Sysstruct *syss)
   return;
 }
 
-static void retsleep(struct Sysstruct *syss)
+static void retsleep(struct Sysstruct *syss, double seconds)
 {
-  syss->ws = FINISHED;
+  syss->waitedsince = time(NULL);
+  syss->waitfor = seconds;
+  syss->ws = SLEEPING;
   return;
 }
 
@@ -157,17 +161,12 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
   //printf("thread %ld started\n", ta.threadid);
   while(true)
   {
-    for(int i = 0; i<ta.arraylen; i++)
+    for(int i=0; i<ta.arraylen; i++)
     {
       if (blocked > (ta.arraylen*3))
       {
-        //printf("thread %d sleeps. Blocked too often........................................\n", ta.threadid);
         sleep(1);
         blocked = 0;
-      }
-      else if (blocked < -10000)
-      {
-        blocked = -1000;
       }
       if (pthread_mutex_trylock(&ta.ws_mutex[i]) != EBUSY)
       {
@@ -209,6 +208,18 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
             blocked++;
           }
         }
+        else if(ta.syss[i].ws == SLEEPING)
+        {
+          struct timespec tp;
+          clock_gettime(CLOCK_MONOTONIC, &tp);
+          if (difftime(time(NULL), tp.tv_sec)>ta.syss[i].waitfor)
+          {
+            ta.syss[i].ws = RUNNING;
+            ta.currentfunc = i;
+            //printf("thread %d runs %d\n", ta.threadid, i);
+            ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
+          }
+        }
         pthread_mutex_unlock(&ta.ws_mutex[i]);
         //printf("thread %d got lock on %d, but the thread couldn't do anything\n", ta.threadid, i);
       }
@@ -235,7 +246,9 @@ static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, str
   {
     numofthreads = (long)arraylen;
   }
-  numofthreads = 32;
+  //numofthreads = 1;
+  printf("spawning %ld worker threads \n", numofthreads);
+  
   
   pthread_t *threads = malloc((unsigned long)numofthreads*sizeof(pthread_t)); //pthread_t threads[numofthreads];
   struct ThreadArgument *ta = malloc((unsigned long)arraylen*sizeof(struct ThreadArgument));
@@ -260,7 +273,7 @@ static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, str
     ta[i].sched_mutex = sched_mutex;
     ta[i].ws_mutex = ws_mutex;
     ta[i].threadid = i;
-    ta[i].numWorkerThreads = numofthreads;
+    ta[i].numWorkerThreads = (int)numofthreads;
     
     printf("Creating thread %d\n", i);
     rc = pthread_create(&threads[i], NULL, scheduler, (void *) &ta[i]);
