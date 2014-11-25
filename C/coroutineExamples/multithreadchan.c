@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <errno.h>
 
-typedef enum {READY, READYSEND, READYRECEIVE, SENDING, RECEIVING, FINISHED, RUNNING, SLEEPING} Waitstate;
+typedef enum {READY, READYSEND, READYRECEIVE, SENDING, TRYRECEIVE, FINISHED, RUNNING, SLEEPING} Waitstate;
 
 struct Datastruct
 {
@@ -341,9 +341,10 @@ int main()
   printf("WS legend: ");
   Waitstate ws = READY; printf("READY=%d, ", ws);
   ws = SENDING; printf("SENDING=%d, ", ws);
-  ws = RECEIVING; printf("RECEIVING=%d, ", ws);
+  ws = TRYRECEIVE; printf("TRYRECEIVE=%d, ", ws);
   ws = FINISHED; printf("FINISHED=%d, ", ws);
-  ws = RUNNING; printf("RUNNING=%d, ", ws);
+  ws = READYRECEIVE; printf("READYRECEIVE=%d, ", ws);
+  ws = READYSEND; printf("READYSEND=%d, ", ws);
   ws = SLEEPING; printf("SLEEPING=%d\n", ws);
   
   int arraylen = 3;
