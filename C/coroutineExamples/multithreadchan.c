@@ -50,7 +50,7 @@ struct Channel
 {
   int message;
   int sender;
-  bool readyForNewMessageNotReadyForReceive;
+  bool channelEmpty;
 };
 
 static void retsend(struct Comstruct *cs, struct Sysstruct *syss, int continuation, int overchannel, int message)
@@ -68,6 +68,15 @@ static void retrecv(struct Comstruct *cs, struct Sysstruct *syss, int continuati
   cs->overchannel = overchannel;
   syss->continuation = continuation;
   syss->ws = READYRECEIVE;
+  return;
+}
+
+static void rettryrecv(struct Comstruct *cs, struct Sysstruct *syss, int continuation, int overchannel)
+{
+  cs->message = -1;
+  cs->overchannel = overchannel;
+  syss->continuation = continuation;
+  syss->ws = TRYRECEIVE;
   return;
 }
 
@@ -197,11 +206,11 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           {
             blocked--;
             printf("thread %d has lock on channel %d for readysend coroutine %d\n", ta.threadid, channel, i);
-            if(ta.chans[channel].readyForNewMessageNotReadyForReceive == true)
+            if(ta.chans[channel].channelEmpty == true)
             {
               ta.chans[channel].message = ta.cs[i].message;
               printf("channel %d holds message %d for readysend coroutine %d\n", channel, ta.chans[channel].message, i);
-              ta.chans[channel].readyForNewMessageNotReadyForReceive = false;
+              ta.chans[channel].channelEmpty = false;
               ta.chans[channel].sender = i;
             }
             pthread_mutex_unlock(&ta.chan_mutex[channel]);
@@ -220,10 +229,10 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           {
             blocked--;
             printf("thread %d has lock on channel %d for readyreceive coroutine %d\n", ta.threadid, channel, i);
-            if(ta.chans[channel].readyForNewMessageNotReadyForReceive == false)
+            if(ta.chans[channel].channelEmpty == false)
             {
               ta.cs[i].message = ta.chans[channel].message;
-              ta.chans[channel].readyForNewMessageNotReadyForReceive = true;
+              ta.chans[channel].channelEmpty = true;
               int sender = ta.chans[channel].sender;
               pthread_mutex_lock(&ta.ws_mutex[sender]);
               ta.syss[sender].ws = READY;
@@ -250,6 +259,41 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
             ta.currentfunc = i;
             printf("thread %d runs %d\n", ta.threadid, i);
             ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
+          }
+        }
+        else if(ta.syss[i].ws == TRYRECEIVE)
+        {
+          int channel = ta.cs[i].overchannel;
+          if (pthread_mutex_trylock(&ta.chan_mutex[channel]) != EBUSY)
+          {
+            blocked--;
+            printf("thread %d has lock on channel %d for tryreceive coroutine %d\n", ta.threadid, channel, i);
+            if(ta.chans[channel].channelEmpty == false)
+            {
+              ta.cs[i].message = ta.chans[channel].message;
+              ta.chans[channel].channelEmpty = true;
+              int sender = ta.chans[channel].sender;
+              pthread_mutex_unlock(&ta.chan_mutex[channel]);
+              pthread_mutex_lock(&ta.ws_mutex[sender]);
+              ta.syss[sender].ws = READY;
+              pthread_mutex_unlock(&ta.ws_mutex[sender]);
+              ta.syss[i].ws = RUNNING;
+              printf("thread %d runs %d\n", ta.threadid, i);
+              ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
+            }
+            else
+            {
+              pthread_mutex_unlock(&ta.chan_mutex[channel]);
+              printf("thread %d checked channel %d for tryreceive coroutine %d, but no message was there\n", ta.threadid, channel, i);
+              ta.syss[i].ws == RUNNING;
+              printf("thread %d runs %d\n", ta.threadid, i);
+              ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
+            }
+          }
+          else
+          {
+            printf("thread %d denied lock on channel %d for readyreceive corutine %d\n", ta.threadid, channel, i);
+            blocked++;
           }
         }
         else
@@ -368,7 +412,7 @@ int main()
   for(int i=0; i<numchannels; i++)
   {
     chans[i].message=-1;
-    chans[i].readyForNewMessageNotReadyForReceive = true;
+    chans[i].channelEmpty = true;
   }
   
   coroutines(functionPointerArray, &ds[0], &cs[0], &syss[0], &chans[0], arraylen, numchannels);
