@@ -8,6 +8,7 @@
 #include <errno.h>
 
 typedef enum {READY, READYSEND, READYRECEIVE, SENDING, TRYRECEIVE, FINISHED, RUNNING, SLEEPING} Waitstate;
+typedef enum {EMPTY, FULL, RELEASING} Chanstate;
 
 struct Datastruct
 {
@@ -50,7 +51,7 @@ struct Channel
 {
   int message;
   int sender;
-  bool channelEmpty;
+  Chanstate channelstate;
 };
 
 static void retsend(struct Comstruct *cs, struct Sysstruct *syss, int continuation, int overchannel, int message)
@@ -155,16 +156,16 @@ static void printlol(struct Datastruct *ds, struct Comstruct *cs, struct Sysstru
   switch(syss->continuation)
   {
     case 0:
-      printf("lol 0 %d\n", ds->counter);
+      //printf("lol 0 %d\n", ds->counter);
       if(rand()%2 == 0)
       {
         retcont(syss, 1);
         return;
       }
     case 1:
-      printf("lol 1 %d\n", ds->counter);
+      //printf("lol 1 %d\n", ds->counter);
       ds->counter++;
-      if (false /*ds->counter > 1000*/)
+      if (ds->counter > 50000000)
       {
         retfin(syss);
         exit(0);
@@ -178,6 +179,7 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
 {
   struct ThreadArgument ta = *(struct ThreadArgument*)arg;
   int blocked = 0;
+  int hogging = 0;
   printf("thread %d started\n", ta.threadid);
   while(true)
   {
@@ -185,18 +187,23 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
     {
       if (blocked > (ta.arraylen*3))
       {
-        usleep(1);  //replace with POSIX-compliant nanosleep when feeling for it
+        usleep(10);  //replace with POSIX-compliant nanosleep when feeling for it
         blocked = 0;
       }
-      if (pthread_mutex_trylock(&ta.ws_mutex[i]) != EBUSY)
+      if (hogging > 2)
       {
-        blocked--;
-        printf("thread %d has lock on %d\n", ta.threadid, i);
+        usleep(1);  //replace with POSIX-compliant nanosleep when feeling for it
+        hogging = 0;
+      }
+      if (/*pthread_mutex_trylock(&ta.ws_mutex[i]) != EBUSY*/ true)
+      {
+        //blocked--;
+        //printf("thread %d has lock on %d\n", ta.threadid, i);
         if(ta.syss[i].ws == READY)
         {
           ta.syss[i].ws = RUNNING;
           ta.currentfunc = i;
-          printf("thread %d runs %d\n", ta.threadid, i);
+          //printf("thread %d runs %d\n", ta.threadid, i);
           ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
         }
         else if(ta.syss[i].ws == READYSEND)
@@ -206,19 +213,46 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           {
             blocked--;
             printf("thread %d has lock on channel %d for readysend coroutine %d\n", ta.threadid, channel, i);
-            if(ta.chans[channel].channelEmpty == true)
+            if(ta.chans[channel].channelstate == EMPTY)
             {
               ta.chans[channel].message = ta.cs[i].message;
               printf("channel %d holds message %d for readysend coroutine %d\n", channel, ta.chans[channel].message, i);
-              ta.chans[channel].channelEmpty = false;
+              ta.chans[channel].channelstate = FULL;
               ta.chans[channel].sender = i;
             }
-            pthread_mutex_unlock(&ta.chan_mutex[channel]);
+            pthread_mutex_unlock(&ta.chan_mutex[channel]);  printf("thread %d released lock on channel %d\n", ta.threadid, channel);
             ta.syss[i].ws = SENDING;
           }
           else
           {
-            printf("thread %d denied lock on channel for readysend coroutine %d %d\n", ta.threadid, channel, i);
+            printf("thread %d denied lock on channel %d for readysend coroutine %d\n", ta.threadid, channel, i);
+            blocked++;
+          }
+        }
+        else if(ta.syss[i].ws == SENDING)
+        {
+          int channel = ta.cs[i].overchannel;
+          if (pthread_mutex_trylock(&ta.chan_mutex[channel]) != EBUSY)
+          {
+            blocked--;
+            printf("thread %d has lock on channel %d for sending coroutine %d\n", ta.threadid, channel, i);
+            if(ta.chans[channel].channelstate == RELEASING)
+            {
+              ta.chans[channel].channelstate = EMPTY;
+              pthread_mutex_unlock(&ta.chan_mutex[channel]);  printf("thread %d released lock on channel %d\n", ta.threadid, channel);
+              ta.syss[i].ws = RUNNING;
+              //printf("thread %d runs %d\n", ta.threadid, i);
+              ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
+            }
+            else
+            {
+              pthread_mutex_unlock(&ta.chan_mutex[channel]);  printf("thread %d released lock on channel %d\n", ta.threadid, channel);
+              hogging++;
+            }
+          }
+          else
+          {
+            printf("thread %d denied lock on channel %d for sending corutine %d\n", ta.threadid, channel, i);
             blocked++;
           }
         }
@@ -229,19 +263,19 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           {
             blocked--;
             printf("thread %d has lock on channel %d for readyreceive coroutine %d\n", ta.threadid, channel, i);
-            if(ta.chans[channel].channelEmpty == false)
+            if(ta.chans[channel].channelstate == FULL)
             {
               ta.cs[i].message = ta.chans[channel].message;
-              ta.chans[channel].channelEmpty = true;
-              int sender = ta.chans[channel].sender;
-              pthread_mutex_lock(&ta.ws_mutex[sender]);
-              ta.syss[sender].ws = READY;
-              pthread_mutex_unlock(&ta.ws_mutex[sender]);
+              ta.chans[channel].channelstate = RELEASING;
               ta.syss[i].ws = RUNNING;
-              printf("thread %d runs %d\n", ta.threadid, i);
+              //printf("thread %d runs %d\n", ta.threadid, i);
               ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
             }
-            pthread_mutex_unlock(&ta.chan_mutex[channel]);
+            else
+            {
+              hogging++;
+            }
+            pthread_mutex_unlock(&ta.chan_mutex[channel]);  printf("thread %d released lock on channel %d\n", ta.threadid, channel);
           }
           else
           {
@@ -257,7 +291,7 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           {
             ta.syss[i].ws = RUNNING;
             ta.currentfunc = i;
-            printf("thread %d runs %d\n", ta.threadid, i);
+            //printf("thread %d runs %d\n", ta.threadid, i);
             ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
           }
         }
@@ -268,25 +302,21 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
           {
             blocked--;
             printf("thread %d has lock on channel %d for tryreceive coroutine %d\n", ta.threadid, channel, i);
-            if(ta.chans[channel].channelEmpty == false)
+            if(ta.chans[channel].channelstate == FULL)
             {
               ta.cs[i].message = ta.chans[channel].message;
-              ta.chans[channel].channelEmpty = true;
-              int sender = ta.chans[channel].sender;
-              pthread_mutex_unlock(&ta.chan_mutex[channel]);
-              pthread_mutex_lock(&ta.ws_mutex[sender]);
-              ta.syss[sender].ws = READY;
-              pthread_mutex_unlock(&ta.ws_mutex[sender]);
+              ta.chans[channel].channelstate = RELEASING;
+              pthread_mutex_unlock(&ta.chan_mutex[channel]);  printf("thread %d released lock on channel %d ", ta.threadid, channel);
               ta.syss[i].ws = RUNNING;
-              printf("thread %d runs %d\n", ta.threadid, i);
+              //printf("thread %d runs %d\n", ta.threadid, i);
               ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
             }
             else
             {
-              pthread_mutex_unlock(&ta.chan_mutex[channel]);
+              pthread_mutex_unlock(&ta.chan_mutex[channel]);  printf("thread %d released lock on channel %d ", ta.threadid, channel);
               printf("thread %d checked channel %d for tryreceive coroutine %d, but no message was there\n", ta.threadid, channel, i);
-              ta.syss[i].ws == RUNNING;
-              printf("thread %d runs %d\n", ta.threadid, i);
+              ta.syss[i].ws = RUNNING;
+              //printf("thread %d runs %d\n", ta.threadid, i);
               ta.functionPointerArray[i](&ta.ds[i], &ta.cs[i], &ta.syss[i], ta);
             }
           }
@@ -300,13 +330,13 @@ __attribute__ ((noreturn)) static void *scheduler(void *arg)
         {
           printf("thread %d got lock on %d, but the thread couldn't do anything\n", ta.threadid, i);
         }
-        pthread_mutex_unlock(&ta.ws_mutex[i]);
+        //pthread_mutex_unlock(&ta.ws_mutex[i]);
       }
-      else
+      /*else
       {
         printf("thread %d denied lock on %d\n", ta.threadid, i);
         blocked++;
-      }
+      }*/
     }
   }
 }
@@ -325,10 +355,9 @@ static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, str
   {
     numofthreads = (long)arraylen;
   }
-  numofthreads = 1;
+  //numofthreads = 2;
+  
   printf("spawning %ld worker threads \n", numofthreads);
-  
-  
   pthread_t *threads = malloc((unsigned long)numofthreads*sizeof(pthread_t)); //pthread_t threads[numofthreads];
   struct ThreadArgument *ta = malloc((unsigned long)arraylen*sizeof(struct ThreadArgument));
   
@@ -347,17 +376,27 @@ static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, str
     pthread_mutex_unlock(&chan_mutex[i]);
   }
   
+  
   int functionsPerWorker = arraylen/numofthreads;
   int rest = arraylen%numofthreads;
+  int last = (int)numofthreads-1;
+  printf("there are %d coroutines per thread. The last thread gets %d coroutines\n", functionsPerWorker, functionsPerWorker+rest);
   
   int rc;
-  for (int i=0; i<(numofthreads); i++) //start threads
+  for (int i=0; i<last; i++) //start threads
   {
-    ta[i].ds = ds;
-    ta[i].cs = cs;
-    ta[i].syss = syss;
-    ta[i].arraylen = arraylen;
-    ta[i].functionPointerArray = functionPointerArray;
+    ta[i].arraylen = functionsPerWorker;
+    ta[i].ds = malloc((unsigned long)ta[i].arraylen*sizeof(struct Datastruct));
+    ta[i].cs = malloc((unsigned long)ta[i].arraylen*sizeof(struct Comstruct));
+    ta[i].syss = malloc((unsigned long)ta[i].arraylen*sizeof(struct Sysstruct));
+    ta[i].functionPointerArray = calloc((unsigned long)ta[i].arraylen, sizeof( void(*)() ));
+    for(int j=0; j<functionsPerWorker; j++)
+    {
+      ta[i].functionPointerArray[j] = functionPointerArray[i*functionsPerWorker+j];
+      ta[i].ds[j] = ds[i*functionsPerWorker+j];
+      ta[i].cs[j] = cs[i*functionsPerWorker+j];
+      ta[i].syss[j] = syss[i*functionsPerWorker+j];
+    }
     ta[i].sched_mutex = sched_mutex;
     ta[i].ws_mutex = ws_mutex;
     ta[i].chan_mutex = chan_mutex;
@@ -370,6 +409,31 @@ static void coroutines(void (*functionPointerArray[])(struct Datastruct *ds, str
     rc = pthread_create(&threads[i], NULL, scheduler, (void *) &ta[i]);
     assert(0 == rc);
   }
+  
+  ta[last].arraylen = functionsPerWorker+rest;
+  ta[last].ds = malloc((unsigned long)ta[last].arraylen*sizeof(struct Datastruct));
+  ta[last].cs = malloc((unsigned long)ta[last].arraylen*sizeof(struct Comstruct));
+  ta[last].syss = malloc((unsigned long)ta[last].arraylen*sizeof(struct Sysstruct));
+  ta[last].functionPointerArray = calloc((unsigned long)(ta[last].arraylen), sizeof( void(*)() ));
+  for(int j=0; j<(rest+functionsPerWorker); j++)
+  {
+    ta[last].functionPointerArray[j] = functionPointerArray[last*functionsPerWorker+j];
+    ta[last].ds[j] = ds[last];
+    ta[last].cs[j] = cs[last];
+    ta[last].syss[j] = syss[last];
+  }
+  ta[last].sched_mutex = sched_mutex;
+  ta[last].ws_mutex = ws_mutex;
+  ta[last].chan_mutex = chan_mutex;
+  ta[last].threadid = last;
+  ta[last].numWorkerThreads = (int)numofthreads;
+  ta[last].chans = chans;
+  ta[last].numchannels = numchannels;
+    
+  printf("Creating thread %d\n", last);
+  rc = pthread_create(&threads[last], NULL, scheduler, (void *) &ta[last]);
+  assert(0 == rc);
+  
   
   for (int i=0; i<numofthreads; ++i) 
   {
@@ -415,7 +479,7 @@ int main()
   for(int i=0; i<numchannels; i++)
   {
     chans[i].message=-1;
-    chans[i].channelEmpty = true;
+    chans[i].channelstate = EMPTY;
   }
   
   coroutines(functionPointerArray, &ds[0], &cs[0], &syss[0], &chans[0], arraylen, numchannels);
