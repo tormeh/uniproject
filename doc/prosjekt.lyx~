@@ -1302,6 +1302,10 @@ Go is expressive, concise, clean, and efficient.
  - Go documentation
 \end_layout
 
+\begin_layout Standard
+Go uses work stealing, see http://morsmachine.dk/go-scheduler
+\end_layout
+
 \begin_layout Subsection
 Use
 \end_layout
@@ -1517,6 +1521,17 @@ d.
  heap, provided that the object is immutable.
 \end_layout
 
+\begin_layout Standard
+Rust used to have only lightweight threads, but due to the many features
+ desirable for threads in Rust (ability to call C code etc.) the lightweight
+ threads ended up being as heavy to run as OS threads, and Rust's lightweight
+ threads have been pushed to a library outside the standard library.
+ This illustrates an important point: OS threads are not heavyweight just
+ to irritate us, they are heavyweight because they have features lightweight
+ threads don't.
+ 
+\end_layout
+
 \begin_layout Section
 Esterel
 \end_layout
@@ -1549,6 +1564,11 @@ Esterel is not a real-time language but since it is completely deterministic,
  simple testing should suffice for investigating time characteristics.
 \end_layout
 
+\begin_layout Standard
+Esterel is hard to get hold of as a private individual, is a niche language
+ and therefore we won't explore it in more detail.
+\end_layout
+
 \begin_layout Section
 Simulink
 \end_layout
@@ -1566,7 +1586,33 @@ LabView
 \end_layout
 
 \begin_layout Standard
-LabView uses pipelining.
+LabView is a proprietary graphical programming language, and as such a bit
+ different from the other languages discussed here.
+ LabView uses pipelining, maybe.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename VisParProg.png
+	lyxscale 70
+	width 100text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+I had problems getting hold of labview screnshots with an appropriate license.
+ Anyway, the basic concept can be easily eplained even with limited fidelity.
+ Data flows along the arrows and the blocks hold functions that outputs
+ new data.
+ As the dataflows branch, you can see the potential for paralellism.
+ Block a and block b are completely independent and LabView can (and will)
+ therefore execute them in paralell.
+ In the end it all gets fed into a sink, for example a controller or a print
+ to memory or screen.
+ 
 \end_layout
 
 \begin_layout Section
