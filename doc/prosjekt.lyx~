@@ -1615,6 +1615,10 @@ I had problems getting hold of labview screnshots with an appropriate license.
  
 \end_layout
 
+\begin_layout Standard
+http://www.ni.com/white-paper/6422/en/
+\end_layout
+
 \begin_layout Section
 Existing C message-passing implementations
 \end_layout
