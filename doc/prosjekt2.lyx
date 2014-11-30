@@ -4,9 +4,9 @@
 \begin_header
 \textclass article
 \begin_preamble
-
-\lstdefinelanguage{scala}{
-  morekeywords={abstract,case,catch,class,def,%
+\lstdefinelanguage{scala}
+{
+ morekeywords={abstract,case,catch,class,def,%
     do,else,extends,false,final,finally,%
     for,if,implicit,import,match,mixin,%
     new,null,object,override,package,%
@@ -80,7 +80,7 @@
 \begin_body
 
 \begin_layout Title
-Light Weight Threads
+Light Weight Threads and Their Synchronization Primitives
 \end_layout
 
 \begin_layout Author
@@ -188,12 +188,12 @@ Semaphore
 
 \begin_deeper
 \begin_layout Itemize
-STM: Software Transactional Memory, or, for som architectures, simply Transactio
-nal Memory, is a kind of optimistic semaphore technique where changes are
+STM: Software Transactional Memory, or, for some architectures, simply Transacti
+onal Memory, is a kind of optimistic semaphore technique where changes are
  rolled back and attempted again in case of conflict.
  Coupled with language features that prevent the sharing of non-transactional
  memory between threads it is a convenient, but computationally costly technique.
- Haskell, Clojure and Akka uses this.
+ Haskell, Clojure and Akka implement this.
  
 \end_layout
 
@@ -242,6 +242,10 @@ Synchronous execution: Threads execute in synchrony, resulting in complete
  Esterel uses this.
 \end_layout
 
+\begin_layout Itemize
+Lightweight threads that are less omputationally costly to deal with.
+\end_layout
+
 \begin_layout Section
 Limitations
 \end_layout
@@ -277,6 +281,101 @@ Let there be no mistake: In switching from OS threads with semaphores to
 \end_layout
 
 \begin_layout Section
+Lightweight threads and synchronization
+\end_layout
+
+\begin_layout Standard
+Lightweight threads and synchronization mechanisms are different things
+ not really intimately linked
+\end_layout
+
+\begin_layout Section
+The nature of a lightweight thread
+\end_layout
+
+\begin_layout Paragraph
+Process > OS Thread > Lightweight Thread
+\end_layout
+
+\begin_layout Standard
+OS threads are actually themselves lightweight when compared to another
+ popular concurrency abstraction: processes.
+ All processes run concurrently anyway, and moving information between them
+ with inter-process communication (example: localhost) you suddenly have
+ a heavyweight actor model: All that's old is new again, it seems.
+ My point is that the quest for more efficient means of concurrency is hardly
+ new, though it has acquired unusual urgency as single-core processor performanc
+e gains are slowing down.
+\end_layout
+
+\begin_layout Paragraph
+What does a lightweight thread look like? 
+\end_layout
+
+\begin_layout Standard
+Well, the point of a lightweight thread is to be light - it can't have all
+ the things an OS thread does.
+ A POSIX thread holds the following things in memory
+\begin_inset CommandInset citation
+LatexCommand cite
+key "key-1"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Itemize
+Stack pointer 
+\end_layout
+
+\begin_layout Itemize
+Registers 
+\end_layout
+
+\begin_layout Itemize
+Scheduling properties (such as policy or priority) 
+\end_layout
+
+\begin_layout Itemize
+Set of pending and blocked signals 
+\end_layout
+
+\begin_layout Itemize
+Thread specific data such as the current execution stack.
+\end_layout
+
+\begin_layout Standard
+Collectively, these things are called a thread context.
+ A context switch is when a processor core pauses, switches its registers,
+ points its stack pointer and program counter at the right memory adresses
+ etc.
+ and starts executing again.
+ So lightweight threads, in order to be lightweight, have to sustain themselves
+ on less than a thread context and/or have faster context switches, which
+ are two goals with overlapping means.
+ There are many ways from here: 
+\end_layout
+
+\begin_layout Itemize
+Go's goroutines have no signals, but they do have a stack.
+ The stack starts small and, like a vector, can be expanded by allocating
+ a piece of memory somewhere else.
+ By having a stack, goroutines are a bit like normal threads as they can
+ be resumed after a pause.
+\end_layout
+
+\begin_layout Itemize
+Akka's actors have no stack.
+ How do they work then? The Java thread runs the actor's receive function
+ until completion and then the stack is thrown away as the Java thread moves
+ on to another actor.
+ Clever and simple, but it requires a different way of programming than
+ we're used to.
+ See? Tradeoffs.
+\end_layout
+
+\begin_layout Section
 CSP Theory
 \end_layout
 
@@ -300,12 +399,179 @@ Channels
 Actors
 \end_layout
 
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language=scala,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+import akka.actor.Actor 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorRef 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorSystem 
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.Props 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.sys 
+\end_layout
+
+\begin_layout Plain Layout
+
+import java.lang.Thread
+\end_layout
+
+\begin_layout Plain Layout
+
+//Type declarations look like this: "nameOfObject:NameOfClass" with or without
+ space.
+\end_layout
+
+\begin_layout Plain Layout
+
+class DemoActor(printstr:String) extends Actor 
+\end_layout
+
+\begin_layout Plain Layout
+
+{  
+\end_layout
+
+\begin_layout Plain Layout
+
+  def receive = 
+\end_layout
+
+\begin_layout Plain Layout
+
+  {     
+\end_layout
+
+\begin_layout Plain Layout
+
+    case other: ActorRef =>
+\end_layout
+
+\begin_layout Plain Layout
+
+    {     	
+\end_layout
+
+\begin_layout Plain Layout
+
+      println(printstr)     	
+\end_layout
+
+\begin_layout Plain Layout
+
+      other ! self      
+\end_layout
+
+\begin_layout Plain Layout
+
+    }     
+\end_layout
+
+\begin_layout Plain Layout
+
+    case _       => println("unknown message")   
+\end_layout
+
+\begin_layout Plain Layout
+
+  } 
+\end_layout
+
+\begin_layout Plain Layout
+
+}   
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+object Main extends App 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+  val system = ActorSystem("DemoSystem")     
+\end_layout
+
+\begin_layout Plain Layout
+
+  val aActor = system.actorOf(Props(classOf[DemoActor], "a"))   
+\end_layout
+
+\begin_layout Plain Layout
+
+  val bActor = system.actorOf(Props(classOf[DemoActor], "b"))   
+\end_layout
+
+\begin_layout Plain Layout
+
+  aActor ! bActor   
+\end_layout
+
+\begin_layout Plain Layout
+
+  Thread.sleep(3)   //let actors run for 3 milliseconds
+\end_layout
+
+\begin_layout Plain Layout
+
+  scala.sys.exit() 
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Synchronous Execution
 \end_layout
 
 \begin_layout Section
 Pipelining
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "llnl.gov pthreads"
+key "key-1"
+
+\end_inset
+
+https://computing.llnl.gov/tutorials/pthreads/
 \end_layout
 
 \begin_layout Standard
