@@ -1616,7 +1616,16 @@ I had problems getting hold of labview screnshots with an appropriate license.
 \end_layout
 
 \begin_layout Standard
+An Occam programmer may express the sequence pictured above like this:
+\end_layout
+
+\begin_layout Standard
 http://www.ni.com/white-paper/6422/en/
+\end_layout
+
+\begin_layout Standard
+http://zone.ni.com/reference/en-XX/help/370622K-01/lvrtbestpractices/rt_priorities
+/
 \end_layout
 
 \begin_layout Section
