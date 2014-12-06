@@ -231,6 +231,14 @@ let it crash
 \end_layout
 
 \begin_layout Itemize
+Paralell statements: If you have multiple actions that you know can be done
+ in paralell without communicating with each other, then proceeding when
+ all are done, then there's no reason you shouldn't.
+ Rust and Akka offer this as futures, Occam has par blocks and LabView has
+ paralell pipes.
+\end_layout
+
+\begin_layout Itemize
 Pipelining: LabView uses this.
  Each thread has one or more pipelines to and from other threads.
  Uses one-way, single sender, single receiver message passing called pipes.
@@ -243,7 +251,9 @@ Synchronous execution: Threads execute in synchrony, resulting in complete
 \end_layout
 
 \begin_layout Itemize
-Lightweight threads that are less omputationally costly to deal with.
+Lightweight threads that are less omputationally costly to deal with than
+ OS threads, which in turn are less costly than processes.
+ Details differ from implementation to implementation.
 \end_layout
 
 \begin_layout Section
@@ -385,6 +395,47 @@ This part is strictly optional.
  computation to be done in which the traditional shared-memory errors like
  race conditions are not possible.
  CSP introduces processes and events.
+\end_layout
+
+\begin_layout Section
+The Conflict Between Fault Tolerance and Verification/Debugging
+\end_layout
+
+\begin_layout Standard
+Formal verification is desireable in many safety-critical programs.
+ Unfortunate side-effects of fault-tolerant systems, for example actor systems,
+ is that they 
+\end_layout
+
+\begin_layout Enumerate
+make the program's behaviour more complex 
+\end_layout
+
+\begin_layout Enumerate
+hides fault from the developer at runtime.
+\end_layout
+
+\begin_layout Standard
+Both are problems when we want to ensure correctness or debug the program
+ at runtime.
+ The first problem can be partly solved by using frameworks or languages
+ where the added complexities can be assumed bug free, though you still
+ need to superficially understand how they work.
+ The second problem can be partly solved by using extensive logging.
+ These techniques can make debugging such a complex system less hard than
+ it would otherwise be, but the analysability of such a system can still
+ be an unsolveable problem due to the amount of states the software can
+ be in.
+\end_layout
+
+\begin_layout Standard
+It is, in sum, unlikely that an implementation made using actor- or other
+ fault-tolerant techniques can be verified directly, however using these
+ models can help create systems that will resist non-software faults.
+ Also, these tools can usually be used to emulate verifiable systems and
+ although that's not as good as using a tool with built-in verifiable abstractio
+ns, it may be better than constructing your own using semaphores and heavy
+ threads.
 \end_layout
 
 \begin_layout Section
@@ -561,6 +612,10 @@ Synchronous Execution
 
 \begin_layout Section
 Pipelining
+\end_layout
+
+\begin_layout Section
+Scheduling
 \end_layout
 
 \begin_layout Bibliography
