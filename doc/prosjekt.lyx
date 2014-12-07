@@ -1588,7 +1588,7 @@ LabView
 \begin_layout Standard
 LabView is a proprietary graphical programming language, and as such a bit
  different from the other languages discussed here.
- LabView uses pipelining, maybe.
+ LabView uses parallel statements.
 \end_layout
 
 \begin_layout Standard

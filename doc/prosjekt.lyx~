@@ -1620,6 +1620,47 @@ An Occam programmer may express the sequence pictured above like this:
 \end_layout
 
 \begin_layout Standard
+\begin_inset listings
+lstparams "frame=lrtb,language=ML,numbers=left,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SEQ
+\end_layout
+
+\begin_layout Plain Layout
+
+	do stuff
+\end_layout
+
+\begin_layout Plain Layout
+
+	PAR
+\end_layout
+
+\begin_layout Plain Layout
+
+		a
+\end_layout
+
+\begin_layout Plain Layout
+
+		b
+\end_layout
+
+\begin_layout Plain Layout
+
+	do more stuff
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 http://www.ni.com/white-paper/6422/en/
 \end_layout
 
