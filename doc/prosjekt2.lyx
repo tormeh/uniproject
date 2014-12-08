@@ -121,6 +121,10 @@ I want to be evaluated on both this report and the attached C code.
  
 \end_layout
 
+\begin_layout Section
+memo to self: paste code with edit->paste special->plain text
+\end_layout
+
 \begin_layout Part
 Goals
 \end_layout
@@ -294,11 +298,22 @@ Lightweight threads and synchronization
 
 \begin_layout Standard
 Lightweight threads and synchronization mechanisms are different things
- not really intimately linked
+ not really intimately linked.
+ It's' quite possible to have one without 
 \end_layout
 
 \begin_layout Section
-The nature of a lightweight thread
+The Nature of a Lightweight Thread
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Lightweight Thread
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Paragraph
@@ -385,6 +400,16 @@ Akka's actors have no stack.
 
 \begin_layout Section
 CSP Theory
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+CSP
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -438,6 +463,16 @@ ns, it may be better than constructing your own using semaphores and heavy
 
 \begin_layout Section
 Semaphores
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Semaphores
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -454,6 +489,26 @@ Semaphores, mutexes and locks operate mostly the same.
 
 \begin_layout Section
 Software Transactional Memory
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Software Transactional Memory
+\end_layout
+
+\end_inset
+
+
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+STM
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -525,12 +580,163 @@ Of course it's done a bit more smartly than this in serious implementations,
 \end_layout
 
 \begin_layout Standard
+STM implementations do not have guarantees pleasing to the ear of a real-time
+ engineer.
+ Typically, operations will be done eventually, in arbitrary sequence.
+ 
+\end_layout
+
+\begin_layout Standard
 There's an awful lot of implementations of STM, though Clojure and Haskell
  are notable for using them as their primary means of synchronization.
 \end_layout
 
+\begin_layout Standard
+Here's an example in Haskell (shamelessly taken from 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "key-2"
+
+\end_inset
+
+):
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language=Haskell,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+module Main where
+\end_layout
+
+\begin_layout Plain Layout
+
+import Control.Monad
+\end_layout
+
+\begin_layout Plain Layout
+
+import Control.Concurrent
+\end_layout
+
+\begin_layout Plain Layout
+
+import Control.Concurrent.STM
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+main = do shared <- atomically $ newTVar 0
+\end_layout
+
+\begin_layout Plain Layout
+
+          before <- atomRead shared
+\end_layout
+
+\begin_layout Plain Layout
+
+          putStrLn $ "Before: " ++ show before
+\end_layout
+
+\begin_layout Plain Layout
+
+          forkIO $ 25 `timesDo` (dispVar shared >> milliSleep 20)
+\end_layout
+
+\begin_layout Plain Layout
+
+          forkIO $ 10 `timesDo` (appV ((+) 2) shared >> milliSleep 50)
+\end_layout
+
+\begin_layout Plain Layout
+
+          forkIO $ 20 `timesDo` (appV pred shared >> milliSleep 25)
+\end_layout
+
+\begin_layout Plain Layout
+
+          milliSleep 800
+\end_layout
+
+\begin_layout Plain Layout
+
+          after <- atomRead shared
+\end_layout
+
+\begin_layout Plain Layout
+
+          putStrLn $ "After: " ++ show after
+\end_layout
+
+\begin_layout Plain Layout
+
+ where timesDo = replicateM_
+\end_layout
+
+\begin_layout Plain Layout
+
+       milliSleep = threadDelay .
+ (*) 1000
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+atomRead = atomically .
+ readTVar
+\end_layout
+
+\begin_layout Plain Layout
+
+dispVar x = atomRead x >>= print
+\end_layout
+
+\begin_layout Plain Layout
+
+appV fn x = atomically $ readTVar x >>= writeTVar x .
+ fn
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This program runs for 800 milliseconds and has three threads.
+ A transactional integer is made.
+ Thread A prints the integer every 20 milliseconds, thread B adds two to
+ the integer every 50 milliseconds and thread C subtracts one from the integer
+ every 25 milliseconds.
+ After 800 milliseconds the integer is 0 again.
+\end_layout
+
 \begin_layout Section
 Channels
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Channels
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -540,6 +746,16 @@ Channels as a method for communication are analogous to the concurrency
 
 \begin_layout Section
 Actors
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Actors
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -553,9 +769,9 @@ Scala with Akka
 \end_layout
 
 \begin_layout Standard
-Scala originally had its own message passing library, but this has been
- deprecated in favor of the Akka library, the essentials of which is included
- as standard in all recent distributions of Scala.
+Scala, a language, originally had its own message passing library, but this
+ has been deprecated in favor of the Akka library, the essentials of which
+ is included as standard in all recent distributions of Scala.
  The Akka actor library is an improvement on the Scala actor library which
  in turn is based on the Erlang actor model.
 \end_layout
@@ -1061,6 +1277,16 @@ Akka actors send messages as references by default, and unfortunately neither
 
 \begin_layout Subsection
 Erlang
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Erlang
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1271,6 +1497,16 @@ I'v'e only found one language that does this, and that is:
 
 \begin_layout Subsection
 Esterel
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Esterel
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1312,6 +1548,16 @@ Parallel Statemens
 
 \begin_layout Subsection
 LabView
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+LabView
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1399,7 +1645,26 @@ http://zone.ni.com/reference/en-XX/help/370622K-01/lvrtbestpractices/rt_prioriti
 \end_layout
 
 \begin_layout Section
+Scheduling Lightweight Threads
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
 Scheduling
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you are goin to run N lightweight threads on M OS threads, you'll have
+ to spread the tasks over, or dispatch them to, the OS threads, somehow.
+ What I'm saying is that you have to write a scheduler.
+ As someone who has done that while writing this: Oy vey, woe be you.
+ It's not a particularly easy task, but some smart people have thought about
+ it before you and I have:
 \end_layout
 
 \begin_layout Subsection
@@ -1436,6 +1701,11 @@ fork-join dispatching
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+Juicy stuff.
+ This is what Go and Akka uses by default.
 \end_layout
 
 \begin_layout Standard
@@ -1501,6 +1771,17 @@ key "key-1"
 \end_inset
 
 https://computing.llnl.gov/tutorials/pthreads/
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "Haskell STM Example"
+key "key-2"
+
+\end_inset
+
+https://www.haskell.org/haskellwiki/Simple_STM_example
 \end_layout
 
 \begin_layout Standard
