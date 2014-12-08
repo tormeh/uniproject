@@ -122,7 +122,8 @@ I want to be evaluated on both this report and the attached C code.
 \end_layout
 
 \begin_layout Section
-memo to self: paste code with edit->paste special->plain text
+memo to self: paste code with edit->paste special->plain text, fix conclusion
+ on stm
 \end_layout
 
 \begin_layout Part
@@ -832,8 +833,8 @@ When sending a message over a channel in Rust, the data in the message will
 \end_layout
 
 \begin_layout Standard
-Go takes a more imperative approach, and accidental data sharing is more
- likely.
+Go takes a more imperative approach, and accidental data sharing is easier
+ to do.
  Here we're doing the exact same thing in Go.
 \end_layout
 
@@ -855,15 +856,6 @@ package main
 \begin_layout Plain Layout
 
 import "fmt"
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-	
 \end_layout
 
 \begin_layout Plain Layout
@@ -912,10 +904,6 @@ func main() {
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
 
 \end_layout
 
@@ -1482,11 +1470,13 @@ OTP
 \end_layout
 
 \begin_layout Standard
-copy-on-send
-\end_layout
-
-\begin_layout Standard
-state as recursion argument
+For Erlang, the actor model is the beginning and the end.
+ Erlang is structured around them; each actor has its own heap, which means
+ that everything sent is physically copied.
+ Erlang is also an eraly functional programming language, and has no loops.
+ State is held as recursion arguments as the actors main function calls
+ itself at the end of processing a message (or don't, if you want to terminate
+ the actor).
 \end_layout
 
 \begin_layout Standard
@@ -1722,7 +1712,232 @@ Parallel Statemens
 \end_layout
 
 \begin_layout Subsection
-LabView
+Occam's PAR
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Occam
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Unfortunately it proved troublesome to get one of the Occam compilers going
+ - working with dead languages can be frustrating.
+ Fortunately, many of the facilities offered in Occam can be replicated
+ in other languages, for example by using Futures and Actors.
+\end_layout
+
+\begin_layout Standard
+For example this (admittedly completely paper-programmed) Occam snippet...
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "frame=lrtb,language=ML,numbers=left,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#INCLUDE "hostio.inc" 
+\end_layout
+
+\begin_layout Plain Layout
+
+#USE "hostio.lib" 
+\end_layout
+
+\begin_layout Plain Layout
+
+PROC Main(CHAN OF SP fs,ts)
+\end_layout
+
+\begin_layout Plain Layout
+
+	SEQ
+\end_layout
+
+\begin_layout Plain Layout
+
+		PAR
+\end_layout
+
+\begin_layout Plain Layout
+
+			x = function(1)
+\end_layout
+
+\begin_layout Plain Layout
+
+			y = function(2)
+\end_layout
+
+\begin_layout Plain Layout
+
+		z = x+y
+\end_layout
+
+\begin_layout Plain Layout
+
+		so.write.string.int(fs, ts, z, 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		so.exit(fs,ts,sps.success)
+\end_layout
+
+\begin_layout Plain Layout
+
+:
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+...
+ can be replicated in Scala like this using futures:
+\begin_inset CommandInset label
+LatexCommand label
+name "Future example"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "frame=lrtb,language=scala,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+import scala.concurrent._ 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.ExecutionContext.Implicits.global 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.duration._ 
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.language.postfixOps
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+object occ extends App 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+	def function(i: Int) = i*i
+\end_layout
+
+\begin_layout Plain Layout
+
+	val x = Future {function(1)}   
+\end_layout
+
+\begin_layout Plain Layout
+
+	val y = Future {function(2)}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	val z = for   
+\end_layout
+
+\begin_layout Plain Layout
+
+	{     
+\end_layout
+
+\begin_layout Plain Layout
+
+		xc <- x     
+\end_layout
+
+\begin_layout Plain Layout
+
+		yc <- y   
+\end_layout
+
+\begin_layout Plain Layout
+
+	} yield xc + yc   
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	val zval = Await.result(z, 0 nanos)   
+\end_layout
+
+\begin_layout Plain Layout
+
+	println(zval) 
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Obviously, this is a good deal more cumbersome than the Occam syntax and
+ probably has more overhead, but the general idea of 
+\begin_inset Quotes eld
+\end_inset
+
+do these things in parallel and then combine them
+\begin_inset Quotes erd
+\end_inset
+
+ is alive and well, though modern replacements tend to be less streamlined
+ for this purpose and have additional bells and whistles.
+\end_layout
+
+\begin_layout Subsection
+LabView's parallel arrows
 \begin_inset Index idx
 status open
 
@@ -1935,6 +2150,151 @@ work stealing
  task groups from other real thread's stacks.
  If there's no work to find there it will look to an input queue of work
  common to all N real threads.
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+The popular approaches taken to concurrency in modern languages can be roughly
+ divided into three: The actor model, channels and software transactional
+ memory.
+ The three approaches come from different mindsets and priorities.
+ Users of the actor model often use it to create distributed, parallel,
+ fault-tolerant systems.
+ Users of CSP often want lower-level concurrency mechanisms that are easier
+ to reason about and more predictable.
+ STM users generally want C-like concurrency with the synchronisation chores
+ handled by the langauge.
+ <-weak on STM.
+ Fix.
+\end_layout
+
+\begin_layout Paragraph
+The differences between CSP and actor model
+\end_layout
+
+\begin_layout Itemize
+CSP threads are anonymous, actors are named.
+\end_layout
+
+\begin_layout Itemize
+CSP communication is synchronous, actor communication is asynchronous.
+\end_layout
+
+\begin_layout Itemize
+CSP communication is multi-sender, multi-receiver, actor communication is
+ one-to-one.
+\end_layout
+
+\begin_layout Part
+Proposal
+\end_layout
+
+\begin_layout Standard
+A recurring theme in discussing these topics online seems to be a need for
+ predictability.
+ POSIX threads are not predictable, but are or may be perceived as more
+ predictable than lightweight threads with lots of stuff happening underneath
+ in a non-obvious manner.
+\end_layout
+
+\begin_layout Standard
+I propose an implementation that is as simple and deterministic as possible,
+ providing guarantees like 
+\begin_inset Quotes eld
+\end_inset
+
+all threads get to run a decent amout
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Exposed functionality should be something like:
+\end_layout
+
+\begin_layout Enumerate
+Parmap, a very simple mapping of one array to another of type 
+\begin_inset Formula $arrayA[x]=f(arrayB[x])$
+\end_inset
+
+ for all elements x.
+ Executed in parallel.
+\end_layout
+
+\begin_layout Enumerate
+Futures, parallel computation
+\end_layout
+
+\begin_layout Enumerate
+Lightweight threads with channels.
+\end_layout
+
+\begin_layout Part
+Prototype
+\end_layout
+
+\begin_layout Section
+Scheduler
+\end_layout
+
+\begin_layout Standard
+Of paramount importance in implementing lightweight threads is the scheduler.
+ Both Go and Akka use a work-stealing scheduler and this seems to be the
+ industry standard.
+ Because it's simple and I'm not very good at C programming I made a simpler
+ scheduler in which the worker threads compete for the lightweight threads.
+ For lightweights that don't do much the result is catastrophic as worker
+ threads compete for mutexes:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/lightLoadedLightThreadsDumbSched.svg
+	lyxscale 70
+	width 100text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For lightweight threads that do a fair amount of work the result is a lot
+ better:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/hevyLoadedLightThreadsDumbSched.svg
+	lyxscale 70
+	width 100text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Note that the time given on the y axis can not be compared across graphs,
+ as the amount of repetitions is different.
+ There are three lightweight threads, two of which sends messages to each
+ other.
+ That's why we speedup when moving from two to three workers is so lacklustre
+ and performance only improves until we have three threads.
+ The perfect amount of worker threads seems best determined by the programmer,
+ who knows how the light threads will communicate, and thus what the real
+ amount of paralellism is.
+ That said, thread-pooling or work-stealing schedulers deal close to optimally
+ with surplus threads.
+\end_layout
+
+\begin_layout Standard
+An important point can be observed from this: You can make your code slower
+ by throwing more threads at it! Even a good scheduler still has a lot of
+ overhead and that overhead may take more time than the actual work, if
+ that amount of work is small enough.
 \end_layout
 
 \begin_layout Bibliography
