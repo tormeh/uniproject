@@ -587,8 +587,10 @@ STM implementations do not have guarantees pleasing to the ear of a real-time
 \end_layout
 
 \begin_layout Standard
-There's an awful lot of implementations of STM, though Clojure and Haskell
- are notable for using them as their primary means of synchronization.
+Whatever your langauge is, someone's probably made an STM miplementation
+ for it, but Clojure and Haskell are notable for using them as their primary
+ means of synchronization.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -723,6 +725,8 @@ This program runs for 800 milliseconds and has three threads.
  the integer every 50 milliseconds and thread C subtracts one from the integer
  every 25 milliseconds.
  After 800 milliseconds the integer is 0 again.
+ At least that's what I think it does.
+ 
 \end_layout
 
 \begin_layout Section
@@ -742,6 +746,177 @@ Channels
 \begin_layout Standard
 Channels as a method for communication are analogous to the concurrency
  in CSP, and convenient to verify and do formal analysis upon.
+ The most known languages impementing them are Rust and Go.
+\end_layout
+
+\begin_layout Standard
+Rust uses channels, futures and immutable copies.
+ Channels are multi-sender, multi-receiver affairs, CSP-style:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+fn main() 
+\end_layout
+
+\begin_layout Plain Layout
+
+{   
+\end_layout
+
+\begin_layout Plain Layout
+
+	let (tx, rx) = channel();   
+\end_layout
+
+\begin_layout Plain Layout
+
+	let txclone = tx.clone();
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	//proc denotes an anonymous function with function body being the stuff
+ behind "proc()"
+\end_layout
+
+\begin_layout Plain Layout
+
+	spawn(proc() tx.send("message"));
+\end_layout
+
+\begin_layout Plain Layout
+
+	spawn(proc() txclone.send("another message"));      
+\end_layout
+
+\begin_layout Plain Layout
+
+	spawn(proc() println!("{:s}, {:s}" ,rx.recv(), rx.recv()) ); 
+\end_layout
+
+\begin_layout Plain Layout
+
+} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When sending a message over a channel in Rust, the data in the message will
+ be duplicated.
+ To improve efficiency, multiple tasks can share an object as if on a shared
+ heap, provided that the object is immutable.
+ You might have noticed that I cloned the transmitter.
+ Why? Rust has no garbage collection, but still automatic memory management,
+ which means that the moment at which an object can be deallocated from
+ the heap need to be apparent at compile time.
+ Therefore, two threads can't have references to the same heap object, in
+ this case the transmitter.
+ In Rust parlance, a thread owns the object and two threads can't own the
+ same object.
+\end_layout
+
+\begin_layout Standard
+Go takes a more imperative approach, and accidental data sharing is more
+ likely.
+ Here we're doing the exact same thing in Go.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+package main
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+import "fmt"
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+func main() {
+\end_layout
+
+\begin_layout Plain Layout
+
+  messages := make(chan string)
+\end_layout
+
+\begin_layout Plain Layout
+
+  go func() { messages <- "message" }()
+\end_layout
+
+\begin_layout Plain Layout
+
+  go func() { messages <- "another message" }()
+\end_layout
+
+\begin_layout Plain Layout
+
+  msg := <-messages
+\end_layout
+
+\begin_layout Plain Layout
+
+  msg2 := <-messages
+\end_layout
+
+\begin_layout Plain Layout
+
+  fmt.Println(msg + " " + msg2)
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
 \end_layout
 
 \begin_layout Section
