@@ -127,6 +127,10 @@ memo to self: paste code with edit->paste special->plain text, fix conclusion
 \end_layout
 
 \begin_layout Part
+Introduction
+\end_layout
+
+\begin_layout Section
 Goals
 \end_layout
 
@@ -135,7 +139,8 @@ The goals of this project is to:
 \end_layout
 
 \begin_layout Enumerate
-Give a desciption of the paradigms relevant to safe concurrency
+Give a desciption of the paradigms relevant to safe concurrency, where safe
+ is defined as lacking race conditions and making deadlocks easier to handle
 \end_layout
 
 \begin_layout Enumerate
@@ -145,11 +150,11 @@ Present the leading edge of implementations and other things that should
 
 \begin_layout Enumerate
 Give an overview over how threads, channels etc.
- are implemented in modern implementations
+ work in modern implementations
 \end_layout
 
 \begin_layout Enumerate
-Propose a solution for concurrency in C
+Propose a mechanism for safe concurrency in C
 \end_layout
 
 \begin_layout Enumerate
@@ -1129,289 +1134,15 @@ Synchronous messaging is neither enforced nor recommended by the Akka developers
 \end_layout
 
 \begin_layout Standard
-In Akka, futures are used by default to avoid blocking when waiting for
- a response, effectively allowing an actor to process several messages concurren
-tly, if it needs to.
- This dramatically increases the complexity required to produce a deadlock,
- and does away with the classical 
-\begin_inset Quotes eld
-\end_inset
-
-A waits on B and B waits on A
-\begin_inset Quotes erd
-\end_inset
-
- example entirely.
- For instance this program...
-\end_layout
-
-\begin_layout Standard
-\begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=scala,numbers=left"
-inline false
-status open
-
-\begin_layout Plain Layout
-
-import akka.actor.Actor 
-\end_layout
-
-\begin_layout Plain Layout
-
-import akka.actor.ActorRef 
-\end_layout
-
-\begin_layout Plain Layout
-
-import akka.actor.ActorSystem 
-\end_layout
-
-\begin_layout Plain Layout
-
-import akka.actor.Props 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.sys 
-\end_layout
-
-\begin_layout Plain Layout
-
-import java.lang.Thread 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.collection.mutable.ArrayBuffer 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.util.Random 
-\end_layout
-
-\begin_layout Plain Layout
-
-import akka.util.Timeout 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.concurrent._ 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.concurrent.ExecutionContext.Implicits.global 
-\end_layout
-
-\begin_layout Plain Layout
-
-import scala.language.postfixOps 
-\end_layout
-
-\begin_layout Plain Layout
-
-import akka.pattern.ask import scala.util.{Failure, Success}
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-//Type declarations look like this: "nameOfObject:NameOfClass" with or without
- space.
-\end_layout
-
-\begin_layout Plain Layout
-
-class LockingActor(printstr:String) extends Actor 
-\end_layout
-
-\begin_layout Plain Layout
-
-{   
-\end_layout
-
-\begin_layout Plain Layout
-
-	var othermessagesanswered:Int = 0   
-\end_layout
-
-\begin_layout Plain Layout
-
-	def receive =    
-\end_layout
-
-\begin_layout Plain Layout
-
-	{     
-\end_layout
-
-\begin_layout Plain Layout
-
-		case other: ActorRef =>     
-\end_layout
-
-\begin_layout Plain Layout
-
-		{      
-\end_layout
-
-\begin_layout Plain Layout
-
-			val response = other.ask("please reply")(50000)    //ask for response
- with timeout of 50 seconds   
-\end_layout
-
-\begin_layout Plain Layout
-
-			response onComplete        
-\end_layout
-
-\begin_layout Plain Layout
-
-			{          
-\end_layout
-
-\begin_layout Plain Layout
-
-				case Success(result) => println("success: " + result)         
-\end_layout
-
-\begin_layout Plain Layout
-
-				case Failure(failure) => println(failure)       
-\end_layout
-
-\begin_layout Plain Layout
-
-			}       
-\end_layout
-
-\begin_layout Plain Layout
-
-			othermessagesanswered += 1       
-\end_layout
-
-\begin_layout Plain Layout
-
-			println(printstr + ": " + othermessagesanswered.toString())     
-\end_layout
-
-\begin_layout Plain Layout
-
-		}     
-\end_layout
-
-\begin_layout Plain Layout
-
-		case "please reply" =>     
-\end_layout
-
-\begin_layout Plain Layout
-
-		{       
-\end_layout
-
-\begin_layout Plain Layout
-
-			sender() ! "this is a reply"     
-\end_layout
-
-\begin_layout Plain Layout
-
-		}     
-\end_layout
-
-\begin_layout Plain Layout
-
-	} 
-\end_layout
-
-\begin_layout Plain Layout
-
-}   
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-object Main extends App 
-\end_layout
-
-\begin_layout Plain Layout
-
-{   
-\end_layout
-
-\begin_layout Plain Layout
-
-    val system = ActorSystem("DemoSystem")       
-\end_layout
-
-\begin_layout Plain Layout
-
-	val aActor = system.actorOf(Props(classOf[LockingActor], "a"))       
-\end_layout
-
-\begin_layout Plain Layout
-
-	val bActor = system.actorOf(Props(classOf[LockingActor], "b"))       
-\end_layout
-
-\begin_layout Plain Layout
-
-	for (x <- 0 to 100000)       
-\end_layout
-
-\begin_layout Plain Layout
-
-	{        
-\end_layout
-
-\begin_layout Plain Layout
-
-		println(x)         
-\end_layout
-
-\begin_layout Plain Layout
-
-		Future{ aActor ! bActor }         
-\end_layout
-
-\begin_layout Plain Layout
-
-		Future{ bActor ! aActor }              
-\end_layout
-
-\begin_layout Plain Layout
-
-	} 
-\end_layout
-
-\begin_layout Plain Layout
-
-}
-\end_layout
+Akka actors interface neatly with other concurrency abstractions in Akka.
+ More in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Actors,-Futures-and"
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-...
- will not deadlock.
- Moreover, the two actors will not even be in synchrony.
- Since they wait for each other with futures, they're not really waiting
- at all!
+.
 \end_layout
 
 \begin_layout Standard
@@ -2032,6 +1763,480 @@ http://www.ni.com/white-paper/6422/en/
 \begin_layout Standard
 http://zone.ni.com/reference/en-XX/help/370622K-01/lvrtbestpractices/rt_priorities
 /
+\end_layout
+
+\begin_layout Subsection
+Futures
+\end_layout
+
+\begin_layout Standard
+Here's a Rust example of the use of a Future
+\begin_inset CommandInset label
+LatexCommand label
+name "Future example2"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language={C++},numbers=left,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+use std::sync::Future;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+fn main()  
+\end_layout
+
+\begin_layout Plain Layout
+
+{      
+\end_layout
+
+\begin_layout Plain Layout
+
+	fn fib(n: u64) -> u64    
+\end_layout
+
+\begin_layout Plain Layout
+
+	{     
+\end_layout
+
+\begin_layout Plain Layout
+
+		// lengthy computation returning an uint     
+\end_layout
+
+\begin_layout Plain Layout
+
+		12586269025   
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	let mut delayed_fib = Future::spawn(proc() fib(50)); 
+\end_layout
+
+\begin_layout Plain Layout
+
+	println!("fib(50) = {}", delayed_fib.get());
+\end_layout
+
+\begin_layout Plain Layout
+
+} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Actors, Futures and STM, Together.
+ 
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Actors
+\end_layout
+
+\end_inset
+
+
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Futures
+\end_layout
+
+\end_inset
+
+
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+STM
+\end_layout
+
+\end_inset
+
+
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Actors,-Futures-and"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In Akka, futures are used by default to avoid blocking when waiting for
+ a response, effectively allowing an actor to process several messages concurren
+tly, if it needs to.
+ This dramatically increases the complexity required to produce a deadlock,
+ and does away with the classical 
+\begin_inset Quotes eld
+\end_inset
+
+A waits on B and B waits on A
+\begin_inset Quotes erd
+\end_inset
+
+ example entirely.
+ For instance this program...
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language=scala,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+import akka.actor.Actor
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorRef
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.ActorSystem
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.actor.Props
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.agent.Agent
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.sys
+\end_layout
+
+\begin_layout Plain Layout
+
+import java.lang.Thread
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.collection.mutable.ArrayBuffer
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.util.Random
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.util.Timeout
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent._
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.concurrent.ExecutionContext.Implicits.global
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.language.postfixOps
+\end_layout
+
+\begin_layout Plain Layout
+
+import akka.pattern.ask
+\end_layout
+
+\begin_layout Plain Layout
+
+import scala.util.{Failure, Success}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+class FutureSTMActor(printstr:String, agent:Agent[String]) extends Actor
+ {
+\end_layout
+
+\begin_layout Plain Layout
+
+  var othermessagesanswered:Int = 0
+\end_layout
+
+\begin_layout Plain Layout
+
+  def receive = 
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    case other: ActorRef =>
+\end_layout
+
+\begin_layout Plain Layout
+
+    {
+\end_layout
+
+\begin_layout Plain Layout
+
+      val response = other.ask("please reply")(50000)
+\end_layout
+
+\begin_layout Plain Layout
+
+      response onComplete 
+\end_layout
+
+\begin_layout Plain Layout
+
+      { 
+\end_layout
+
+\begin_layout Plain Layout
+
+        case Success(result) => println("success: " + result); println(printstr
+ + ": " + "STM Int says main thread in iteration: " + agent.get)
+\end_layout
+
+\begin_layout Plain Layout
+
+        case Failure(failure) => println(failure)
+\end_layout
+
+\begin_layout Plain Layout
+
+      }
+\end_layout
+
+\begin_layout Plain Layout
+
+      othermessagesanswered += 1
+\end_layout
+
+\begin_layout Plain Layout
+
+      println(printstr + ": " + othermessagesanswered.toString())
+\end_layout
+
+\begin_layout Plain Layout
+
+    }
+\end_layout
+
+\begin_layout Plain Layout
+
+    case "please reply" =>
+\end_layout
+
+\begin_layout Plain Layout
+
+    {
+\end_layout
+
+\begin_layout Plain Layout
+
+      sender() ! "this is a reply"
+\end_layout
+
+\begin_layout Plain Layout
+
+    }
+\end_layout
+
+\begin_layout Plain Layout
+
+    case s: String =>
+\end_layout
+
+\begin_layout Plain Layout
+
+    {
+\end_layout
+
+\begin_layout Plain Layout
+
+      println("got string: " + s)
+\end_layout
+
+\begin_layout Plain Layout
+
+    }
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+object Main extends App  
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+	val agent = Agent("0"*10)
+\end_layout
+
+\begin_layout Plain Layout
+
+	val system = ActorSystem("DemoSystem")
+\end_layout
+
+\begin_layout Plain Layout
+
+    val aActor = system.actorOf(Props(classOf[FutureSTMActor], "a", agent))
+\end_layout
+
+\begin_layout Plain Layout
+
+    val bActor = system.actorOf(Props(classOf[FutureSTMActor], "b", agent))
+\end_layout
+
+\begin_layout Plain Layout
+
+    for (x <- 0 to 10)
+\end_layout
+
+\begin_layout Plain Layout
+
+    {
+\end_layout
+
+\begin_layout Plain Layout
+
+      println("m: " + x.toString)
+\end_layout
+
+\begin_layout Plain Layout
+
+      agent send ((x.toString) * 10)
+\end_layout
+
+\begin_layout Plain Layout
+
+      println("m: " + agent.get.toString)
+\end_layout
+
+\begin_layout Plain Layout
+
+      Future{ aActor ! bActor }
+\end_layout
+
+\begin_layout Plain Layout
+
+      Future{ bActor ! aActor }
+\end_layout
+
+\begin_layout Plain Layout
+
+      if(x%1==0) { Thread.sleep(2) }
+\end_layout
+
+\begin_layout Plain Layout
+
+    }
+\end_layout
+
+\begin_layout Plain Layout
+
+    Thread.sleep(1000)
+\end_layout
+
+\begin_layout Plain Layout
+
+    scala.sys.exit()
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+...
+ will not deadlock.
+ Moreover, the two actors will not even be in synchrony.
+ Since they wait for each other with futures, they're not really waiting
+ at all!
+\end_layout
+
+\begin_layout Standard
+Now, you think we may be covered, but the problem with messages is one of
+ synchronization.
+ How do you make sure that an entire system of actors all have the same
+ value, for example money in your bank account? One way to do it is to use
+ STM, as we here do, synchronizing state across actors using Agents, which
+ are inspired by Clojure's STM.
+ As expected, the STM Agent is synchronized through the entire run, even
+ though nothing else among the agents are.
 \end_layout
 
 \begin_layout Section

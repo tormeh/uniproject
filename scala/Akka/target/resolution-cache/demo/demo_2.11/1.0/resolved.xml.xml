@@ -4,7 +4,7 @@
 		module="demo_2.11"
 		revision="1.0"
 		status="integration"
-		publication="20140922174739"
+		publication="20141209030625"
 	>
 		<description>
 		demo
@@ -32,8 +32,9 @@
 		<artifact name="demo_2.11" type="doc" ext="jar" conf="docs" e:classifier="javadoc"/>
 	</publications>
 	<dependencies>
-		<dependency org="org.scala-lang" name="scala-compiler" rev="2.11.2" conf="scala-tool->default,optional(default)"/>
-		<dependency org="org.scala-lang" name="scala-library" rev="2.11.2" conf="scala-tool->default,optional(default);compile->default(compile)"/>
-		<dependency org="com.typesafe.akka" name="akka-actor_2.11" rev="2.3.6" conf="compile->default(compile)"/>
+		<dependency org="org.scala-lang" name="scala-compiler" rev="2.11.4" conf="scala-tool->default,optional(default)"/>
+		<dependency org="org.scala-lang" name="scala-library" rev="2.11.4" conf="scala-tool->default,optional(default);compile->default(compile)"/>
+		<dependency org="com.typesafe.akka" name="akka-agent_2.11" rev="2.3.7" conf="compile->default(compile)"/>
+		<dependency org="com.typesafe.akka" name="akka-actor_2.11" rev="2.3.7" conf="compile->default(compile)"/>
 	</dependencies>
 </ivy-module>

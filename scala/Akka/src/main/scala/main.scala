@@ -4,6 +4,7 @@ import akka.actor.Actor
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
+import akka.agent.Agent
 import scala.sys
 import java.lang.Thread
 import scala.collection.mutable.ArrayBuffer
@@ -82,6 +83,32 @@ class LockingActor(printstr:String) extends Actor {
   }
 }
 
+class FutureSTMActor(printstr:String, agent:Agent[String]) extends Actor {
+  var othermessagesanswered:Int = 0
+  def receive = 
+  {
+    case other: ActorRef =>
+    {
+      val response = other.ask("please reply")(50000)
+      response onComplete 
+      { 
+        case Success(result) => println("success: " + result); println(printstr + ": " + "STM Int says main thread in iteration: " + agent.get)
+        case Failure(failure) => println(failure)
+      }
+      othermessagesanswered += 1
+      println(printstr + ": " + othermessagesanswered.toString())
+    }
+    case "please reply" =>
+    {
+      sender() ! "this is a reply"
+    }
+    case s: String =>
+    {
+      println("got string: " + s)
+    }
+  }
+}
+
 
 object Main extends App 
 {
@@ -135,6 +162,25 @@ object Main extends App
       Thread.sleep(1000) 
       //scala.sys.exit()
     }
+    
+    def actorStmFuture(): Unit =
+    {
+      val agent = Agent("0"*10)
+      val system = ActorSystem("DemoSystem")
+      val aActor = system.actorOf(Props(classOf[FutureSTMActor], "a", agent))
+      val bActor = system.actorOf(Props(classOf[FutureSTMActor], "b", agent))
+      for (x <- 0 to 1000)
+      {
+        println("m: " + x.toString)
+        agent send ((x.toString) * 10)
+        println("m: " + agent.get.toString)
+        Future{ aActor ! bActor }
+        Future{ bActor ! aActor }
+        //if(x%1==0) { Thread.sleep(2) }
+      }
+      Thread.sleep(1000)
+      scala.sys.exit()
+    }
 
-  deadlockattempt()
+  actorStmFuture()
 }
