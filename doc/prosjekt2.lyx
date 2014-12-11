@@ -212,7 +212,7 @@ Prototype the solution mentioned
 \end_layout
 
 \begin_layout Section
-Problems
+Problems, Complaints and Whining
 \end_layout
 
 \begin_layout Standard
@@ -235,7 +235,7 @@ Initially the idea was to make a lightweight threading library for C.
 \begin_layout Standard
 C11 has introduced a number of optional handy features, which would have
  made the code more portable, and generally better.
- Unfortunately, neither clang nor GCC have <stdatomic.h> and <thread.h>.
+ Unfortunately, neither clang nor GCC have <stdatomic.h> and <thread.h> yet.
  The support for generics is also laclustre.
  C11 introduced a way to use C-macros to, at runtime, use the correct function
  for an arbitrary argument to a fictive function with generic argument.
@@ -534,6 +534,8 @@ Go's goroutines have no signals, but they do have a stack.
  space.
  By having a stack, goroutines are a bit like normal threads as they can
  be resumed after a pause.
+ Go's goroutines are implemented like coroutines where inserting yield and
+ resume is done by the compiler.
 \end_layout
 
 \begin_layout Itemize
@@ -543,6 +545,8 @@ Akka's actors have no stack.
  on to another actor.
  Clever and simple, but it requires a different way of programming than
  we're used to.
+ As a result of this, Akka offers 2.5 million actors per GB of heap memory.
+ 
 \end_layout
 
 \begin_layout Section
@@ -656,6 +660,505 @@ invariant
 \end_layout
 
 \begin_layout Section
+Coroutines: Single-thread Interleaved Execution
+\end_layout
+
+\begin_layout Standard
+Coroutines are a superclass of subroutines, what we ordinarliy call functions,
+ and are mostly written the same way.
+ While a function is called and then returns, with a clear caller-callee
+ relationship, coroutines can yield and receive execution as many times
+ as desired during its lifetime.
+ Functions, to contrast, 
+\begin_inset Quotes eld
+\end_inset
+
+resume
+\begin_inset Quotes erd
+\end_inset
+
+ at the beginning and yield at the end.
+ Coroutines are so called because they do co-operative scheduling - yielding
+ is entirely voluntary and predictable on the part of the coroutine.
+ Coroutines were first done in Assembly by Melvin Conway in 1958, and it's
+ easy to understand why - yielding in assembly can be done by simply doing
+ a jumping into another 
+\begin_inset Quotes eld
+\end_inset
+
+coroutine
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Actually, Assembly usually has no concept of functions, let alone coroutines,
+ so you just jump to somewhere else in program memory.
+\end_layout
+
+\begin_layout Subsection
+Disadvantages
+\end_layout
+
+\begin_layout Standard
+Coroutines have co-operative scheduling, which is cheap compared to pre-emptive
+ but that means we're reliant on the programmer for parallelism.
+ Any coroutine can hog procesing capacity for as long as it likes.
+ Also, real threads don't share stack, so state held in stack somehow needs
+ to be synchronised across threads.
+\end_layout
+
+\begin_layout Subsection
+Problems in C
+\end_layout
+
+\begin_layout Standard
+I've decided to provide you with a basic example of the mechanisms used.
+ Here we have two functions, co1 and co2, pass control between one another,
+ saving each other's positions on the stack in global environment variables.
+ The variables need to be global, because jumping to a function higher up
+ on the stack will mess up any variable, even const pointers, held on the
+ stack in that function.
+ It's probably the same for all functions higher up on the stack, but I
+ haven't tested.
+ That gave me some weird bug behaviour that was pretty hard to figure out.
+ It's worth pointing out that the behaviour of longjumping to a function
+ that is not the caller of the current function is 
+\emph on
+undefined
+\emph default
+; this is abuse of longjmp, but it is not unprecedented and does work.
+ An alternative would be using Boost.context from the Boost library for C++,
+ if that can be made to work.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,extendedchars=true,frame=lrtb,language=C,numbers=left,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#include <stdio.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <setjmp.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static jmp_buf environment1;
+\end_layout
+
+\begin_layout Plain Layout
+
+static jmp_buf environment2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+__attribute__ ((noreturn)) static void co2()
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  int VAR = 5;
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("VAR = %d
+\backslash
+n", VAR);
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("In function co2 place 1
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  int ret = setjmp(environment2);
+\end_layout
+
+\begin_layout Plain Layout
+
+  if (ret == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    longjmp(environment1, 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("In function co2 place 2
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+  ret = setjmp(environment2);
+\end_layout
+
+\begin_layout Plain Layout
+
+  if (ret == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    longjmp(environment1, 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("In function co2 place 3
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("VAR = %d
+\backslash
+n", VAR);
+\end_layout
+
+\begin_layout Plain Layout
+
+  longjmp(environment1, 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static void co1()
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("In function co1 place 1
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  int ret = setjmp(environment1);
+\end_layout
+
+\begin_layout Plain Layout
+
+  if (ret == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    co2();
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("In function co1 place 2
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  ret = setjmp(environment1);
+\end_layout
+
+\begin_layout Plain Layout
+
+  if (ret == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    longjmp(environment2, 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("In function co1 place 3
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+  ret = setjmp(environment1);
+\end_layout
+
+\begin_layout Plain Layout
+
+  if (ret == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    longjmp(environment2, 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  return;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int main()
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("Hello World
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    co1();
+\end_layout
+
+\begin_layout Plain Layout
+
+    return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The output is as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,numbers=left"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Hello World 
+\end_layout
+
+\begin_layout Plain Layout
+
+In function co1 place 1 
+\end_layout
+
+\begin_layout Plain Layout
+
+VAR = 5 
+\end_layout
+
+\begin_layout Plain Layout
+
+In function co2 place 1 
+\end_layout
+
+\begin_layout Plain Layout
+
+In function co1 place 2 
+\end_layout
+
+\begin_layout Plain Layout
+
+In function co2 place 2 
+\end_layout
+
+\begin_layout Plain Layout
+
+In function co1 place 3 
+\end_layout
+
+\begin_layout Plain Layout
+
+In function co2 place 3 
+\end_layout
+
+\begin_layout Plain Layout
+
+VAR = 0 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Interestingly, the integer variable VAR changes value without ever having
+ been touched since creation in the source code.
+ Not only can we not synchronise stack state between real threads, we can't
+ even keep it within one real thread.
+ As explained, coroutines can be done with jumps, but stack variables are
+ not conserved.
+ At least not without using costly system calls or complicated assembly
+ voodoo, which most lightweight thread libraries for C seems to use.
+ This means that the normal way of programming will have to be constrained
+ a bit - all variables will have to be held on the heap or in global variables.
+\end_layout
+
+\begin_layout Subsection
+How it may be used to create general-purpose lightweight threads
+\end_layout
+
+\begin_layout Standard
+Coroutines as hereto discussed might make some code more readable (especially
+ consumer-producer relationships), but it does not help us create lightweight
+ threads of the kind we want.
+ But what if the coroutine didn't yield to another coroutine but to a scheduler?
+ Indeed, this is how goroutines work in Go, although Go hides so much of
+ the manual scheduling work that its authors decided to exchange c for g
+ in the name to avoid confusion.
+ 
+\end_layout
+
+\begin_layout Standard
+A possible way to use coroutines to achieve lightweight threads would be
+ to have each lightweight thread be a function pointer and a struct held
+ on heap where state can be saved.
+ The function yields each time it awaits a message and when it is done.
+ When a function yields, the executing thread goes back to the scheduler
+ and starts or resumes another function.
+ Messages are received through a special value in the struct.
+\end_layout
+
+\begin_layout Section
 Semaphores
 \begin_inset Index idx
 status open
@@ -679,6 +1182,348 @@ Semaphores, mutexes and locks operate mostly the same.
  Concurrent threads usually do not persist during the entire program, but
  are created for specific purposes and ended as soon as possible to keep
  complexity as low as possible.
+\end_layout
+
+\begin_layout Standard
+Simple example of the related mutex concept:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language=C,showstringspaces=false"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#include <stdio.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <pthread.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <assert.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <stdlib.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <time.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <unistd.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#define ITERATIONS 1000000
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+pthread_mutex_t mutex;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static void *increment(void *arg)
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  long *counter = arg;
+\end_layout
+
+\begin_layout Plain Layout
+
+  for(long i=0; i<ITERATIONS; i++)
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    pthread_mutex_lock(&mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+    *counter = *counter+1;
+\end_layout
+
+\begin_layout Plain Layout
+
+    pthread_mutex_unlock(&mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static void *decrement(void *arg)
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  long *counter = arg;
+\end_layout
+
+\begin_layout Plain Layout
+
+  for(long i=0; i<ITERATIONS; i++)
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    pthread_mutex_lock(&mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+    *counter = *counter-1;
+\end_layout
+
+\begin_layout Plain Layout
+
+    pthread_mutex_unlock(&mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int main(void)
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("Hello World
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+  long *counter = malloc(sizeof(long));
+\end_layout
+
+\begin_layout Plain Layout
+
+  *counter = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("in main before threads ds.counter=%ld
+\backslash
+n", *counter);
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  pthread_t *threads = malloc(2*sizeof(pthread_t));
+\end_layout
+
+\begin_layout Plain Layout
+
+  pthread_mutex_t *mutex;
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  int rc;
+\end_layout
+
+\begin_layout Plain Layout
+
+  rc = pthread_create(&threads[0], NULL, increment, counter);
+\end_layout
+
+\begin_layout Plain Layout
+
+  assert(0 == rc);
+\end_layout
+
+\begin_layout Plain Layout
+
+  rc = pthread_create(&threads[1], NULL, decrement, counter);
+\end_layout
+
+\begin_layout Plain Layout
+
+  assert(0 == rc);
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  for (int i=0; i<2; ++i) 
+\end_layout
+
+\begin_layout Plain Layout
+
+  {
+\end_layout
+
+\begin_layout Plain Layout
+
+    // block until thread i completes
+\end_layout
+
+\begin_layout Plain Layout
+
+    rc = pthread_join(threads[i], NULL);
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("Thread number %d is complete
+\backslash
+n", i);
+\end_layout
+
+\begin_layout Plain Layout
+
+    assert(0 == rc);
+\end_layout
+
+\begin_layout Plain Layout
+
+  }
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+  printf("in main after threads counter=%ld
+\backslash
+n", *counter);
+\end_layout
+
+\begin_layout Plain Layout
+
+  return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you're anything like me you don't like this very much.
 \end_layout
 
 \begin_layout Section
@@ -922,6 +1767,271 @@ This program runs for 800 milliseconds and has three threads.
  After 800 milliseconds the integer is 0 again.
  At least that's what I think it does.
  
+\end_layout
+
+\begin_layout Standard
+Here's a Clojure example illustrating STM, and this one I've actually written
+ myself:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "frame=lrtb"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+(def x (ref 1))
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(defn increment [i]
+\end_layout
+
+\begin_layout Plain Layout
+
+  (if (> i 0) 
+\end_layout
+
+\begin_layout Plain Layout
+
+    (
+\end_layout
+
+\begin_layout Plain Layout
+
+      (dosync
+\end_layout
+
+\begin_layout Plain Layout
+
+        (alter x inc)
+\end_layout
+
+\begin_layout Plain Layout
+
+        (comment println (format "in increment %d" @x))
+\end_layout
+
+\begin_layout Plain Layout
+
+      )
+\end_layout
+
+\begin_layout Plain Layout
+
+      (Thread/sleep 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+      (increment (- i 1))
+\end_layout
+
+\begin_layout Plain Layout
+
+    )
+\end_layout
+
+\begin_layout Plain Layout
+
+  )
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(defn decrement [i]
+\end_layout
+
+\begin_layout Plain Layout
+
+  (if (> i 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+    (
+\end_layout
+
+\begin_layout Plain Layout
+
+      (dosync
+\end_layout
+
+\begin_layout Plain Layout
+
+        (alter x dec)
+\end_layout
+
+\begin_layout Plain Layout
+
+        (comment println (format "in decrement %d" @x))
+\end_layout
+
+\begin_layout Plain Layout
+
+      )
+\end_layout
+
+\begin_layout Plain Layout
+
+      (Thread/sleep 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+      (decrement (- i 1))
+\end_layout
+
+\begin_layout Plain Layout
+
+    )
+\end_layout
+
+\begin_layout Plain Layout
+
+  )
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(defn printref [i]
+\end_layout
+
+\begin_layout Plain Layout
+
+  (if (> i 0) 
+\end_layout
+
+\begin_layout Plain Layout
+
+    (
+\end_layout
+
+\begin_layout Plain Layout
+
+      (dosync
+\end_layout
+
+\begin_layout Plain Layout
+
+        (println (format "in printref %d" @x))
+\end_layout
+
+\begin_layout Plain Layout
+
+      )
+\end_layout
+
+\begin_layout Plain Layout
+
+      (Thread/sleep 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+      (printref (- i 1))
+\end_layout
+
+\begin_layout Plain Layout
+
+    )
+\end_layout
+
+\begin_layout Plain Layout
+
+  )
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(future
+\end_layout
+
+\begin_layout Plain Layout
+
+  (increment 10)
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(future
+\end_layout
+
+\begin_layout Plain Layout
+
+  (printref 15)
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(future
+\end_layout
+
+\begin_layout Plain Layout
+
+  (decrement 10)
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Paragraph
@@ -2208,7 +3318,14 @@ It is noteworthy that rpar makes this evaluation lazy, a sort of future
 
 \begin_layout Standard
 This type of concurrency is actually not too hard to achieve in C.
- Yours truly have made an admittedly array[int]->array[int] attempt:
+ Yours truly have made an admittedly array[int]->array[int] attempt
+\begin_inset CommandInset label
+LatexCommand label
+name "C parmap"
+
+\end_inset
+
+:
 \end_layout
 
 \begin_layout Standard
@@ -3068,7 +4185,7 @@ Now, you think we may be covered, but the problem with messages is one of
  value, for example money in your bank account? One way to do it is to use
  STM, as we here do, synchronizing the current iteration number in the main
  thread's loop across actors using Agents, which are inspired by Clojure's
- STM.
+ STM Agents.
  As expected, the STM Agent is synchronized through the entire run, even
  though nothing else among the agents are.
 \end_layout
@@ -3078,8 +4195,8 @@ An interesting problem occured when I tested this.
  Sometimes the number in the shared string would go downwards.
  Why? Turns out sometimes the transactions are enacted out of order, and
  the STM variable is set to a late value after a newer one.
- Remember, STM only guarantees that changes are made correctly, relying
- on the order in which the changes are done is unwise.
+ This isn't a feature that's universal to STM, but rather this particular
+ implementation; usually updates from a single thread arrive in-order.
  A way to get around this is to increment the value instead of assigning
  to it, like so: 
 \begin_inset listings
@@ -3355,6 +4472,19 @@ newpage
 Prototype
 \end_layout
 
+\begin_layout Standard
+A prototype can be seen in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "C parmap"
+
+\end_inset
+
+.
+ We'll now look at the prototype for lightweight threads.
+ I haven't made a prototype for futures.
+\end_layout
+
 \begin_layout Section
 Scheduler
 \end_layout
@@ -3364,7 +4494,8 @@ Of paramount importance in implementing lightweight threads is the scheduler.
  Both Go and Akka use a work-stealing scheduler and this seems to be the
  industry standard.
  Because it's simple and I'm not very good at C programming I made a simpler
- scheduler in which the worker threads compete for the lightweight threads.
+ scheduler in which all worker threads compete for all lightweight threads
+ all the time.
  For lightweights that don't do much the result is catastrophic as worker
  threads compete for mutexes:
 \end_layout
@@ -3415,6 +4546,57 @@ An important point can be observed from this: You can make your code slower
  by throwing more threads at it! Even a good scheduler still has a lot of
  overhead and that overhead may take more time than the actual work, if
  that amount of work is small enough.
+\end_layout
+
+\begin_layout Paragraph
+Smarter scheduling with thread-pool dispatching
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename lightLoadedLightThreadsSmartSched.svg
+	lyxscale 70
+	width 100text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This is the final scheduler with very light load on the lightweight threads.
+ I wouldn't compare seconds across graphs, because I have been very incosistent
+ about number of iterations etc.
+ Unfortunately, the final scheduler is unable to cope with more than one
+ OS thread per lightweight thread, so that's why the threads don't go to
+ seven here.
+ Fortunately that situation makes absolutely no sense for thread-pool schedulers
+, as the superfluous threads would have nothing to do.
+ In the discussion about fork-join dispatching I mentioned that it solved
+ the problem of bad labor division among the OS threads.
+ Here we can see such a problem play out as time goes down from two threads
+ to three.
+ In lightweight threads that do almost no work the majority of the time
+ is spent in the scheduler.
+ It's therefore better to just have as few threads as possible to make the
+ scheduling go as fast as possible.
+ The only reason I can see for the performance going up as we move from
+ two to three is that the lightweight threads are badly handed out.
+ If you're looking at the source right now, I'm thinking the grouping is
+ [[foo], [baz, lol]] when a better grouping would be [[foo, baz], [lol]]
+ as lol is independent of foo and baz and the latter two cannot run at the
+ same time.
+ With a work-stealing scheduler this would have solved itself pretty quickly.
+\end_layout
+
+\begin_layout Standard
+From two to three threads we also see mutex contention being a much lesser
+ problem than earlier.
+ It's basically gone, in fact, as this is the goal of thread-pool scheduling.
+\end_layout
+
+\begin_layout Section
+The Structure of the Prototype
 \end_layout
 
 \begin_layout Bibliography
