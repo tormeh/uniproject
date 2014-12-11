@@ -173,6 +173,13 @@ There are many models of concurrency awailable to the modern engineer.
  We will look at some of them in this report.
 \end_layout
 
+\begin_layout Standard
+Interestingly, parallel statements and synchronous execution do away with
+ the indeterminism entirely, and are therefore handy when you can't be bothered
+ with nondeterministic execution, though there are performance and flexibility
+ costs to this.
+\end_layout
+
 \begin_layout Section
 Goals
 \end_layout
@@ -361,7 +368,7 @@ Lightweight threads that are less omputationally costly to deal with than
 \end_layout
 
 \begin_layout Section
-Limitations
+Limitations of Lightweight Threads
 \end_layout
 
 \begin_layout Standard
@@ -602,8 +609,50 @@ It is, in sum, unlikely that an implementation made using actor- or other
  models can help create systems that will resist non-software faults.
  Also, these tools can usually be used to emulate verifiable systems and
  although that's not as good as using a tool with built-in verifiable abstractio
-ns, it may be better than constructing your own using semaphores and heavy
- threads.
+ns, it will usually be better than constructing your own using semaphores
+ and heavy threads.
+\end_layout
+
+\begin_layout Section
+Immutability 
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+immutability
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If an object or value is immutable it means it can't be changed.
+ Depending on whom you ask, this might mean that only the object itself
+ need be unchangeable, or it could mean that the object and all the objects
+ it references are unchangeable.
+ To avoid the ambiguity, terms like 
+\begin_inset Quotes eld
+\end_inset
+
+deeply immutable
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+invariant
+\begin_inset Quotes erd
+\end_inset
+
+ can be used for the latter.
+ Objects or values that are deeply immutable can be shared between threads
+ without fear of adverse effects, which make this property very attractive.
+ Functional languages and languages with functional influences like Haskell,
+ Erlang, Scala, Clojure and Rust place heavy emphasis on immutability.
 \end_layout
 
 \begin_layout Section
@@ -884,9 +933,9 @@ My explanation of STM above has a problem in it: What if the STM variable
  is really really large? In the real world, STM algorithms do not copy,
  but use logs of the specific thing they read and write: A read-set and
  a write-set.
- Copies will necessarily have to be made, but if you only read and write
- to element 23438 in the array then whether the other variables have been
- changed during operation doesn't matter.
+ Copies or records will necessarily have to be made, but if you only read
+ and write to element 23438 in the array then whether the other variables
+ have been changed during operation doesn't matter.
  Not only does this improve performance, but other threads can work concurrently
  on other parts of the array without much conflict.
 \end_layout
@@ -1055,7 +1104,7 @@ func main() {
 
 \begin_layout Plain Layout
 
-  fmt.Println(msg + " " + msg2)
+  fmt.Println(msg + ", " + msg2)
 \end_layout
 
 \begin_layout Plain Layout
@@ -1066,6 +1115,10 @@ func main() {
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+Since Go has garbage collection, there's no need for cloning.
 \end_layout
 
 \begin_layout Section
@@ -1089,7 +1142,7 @@ There are many implementations of the Actor model, but only two that I know
 \end_layout
 
 \begin_layout Subsection
-Scala with Akka
+Akka on Scala
 \begin_inset Index idx
 status open
 
@@ -1330,6 +1383,39 @@ Akka actors have many interesting properties.
  TCP.
  Akka, unlike Erlang, enforces supervision in a similar manner as offered
  by Erlang's OTP.
+\end_layout
+
+\begin_layout Standard
+Akka actor reference examples
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Akka actorRefs"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "frame=lrtb"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+"akka://my-sys/user/service-a/worker1"                   // purely local
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+"akka.tcp://my-sys@host.example.com:5678/user/service-b" // remote
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1625,7 +1711,7 @@ Parallel statements are very attractive, because they can make our code
  The catch is that the statements to be parallelised cannot communicate
  with each other.
  Keep in mind, though, that the overhead of managing threads might outweigh
- the benefits of parallelism if the tasks you want done aresufficiently
+ the benefits of parallelism if the tasks you want done are sufficiently
  simple and few.
  Some tools and languages, like Occam, treat your parallel instructions
  as guidelines where this tradeoff is outsourced to the compiler.
@@ -3335,7 +3421,7 @@ An important point can be observed from this: You can make your code slower
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
 label "llnl.gov pthreads"
-key "key-1"
+key "llnl.gov pthreads"
 
 \end_inset
 
@@ -3346,7 +3432,7 @@ https://computing.llnl.gov/tutorials/pthreads/
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
 label "Haskell STM Example"
-key "key-2"
+key "Haskell STM Example"
 
 \end_inset
 
@@ -3362,6 +3448,17 @@ key "Mickens:NW"
 \end_inset
 
 http://research.microsoft.com/en-us/people/mickens/thenightwatch.pdf
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "Akka actorRefs"
+key "Akka actorRefs"
+
+\end_inset
+
+http://doc.akka.io/docs/akka/snapshot/general/addressing.html
 \end_layout
 
 \begin_layout Standard
