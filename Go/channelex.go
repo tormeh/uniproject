@@ -1,0 +1,15 @@
+package main
+
+import "fmt"
+
+	
+
+func main() {
+  messages := make(chan string)
+  go func() { messages <- "message" }()
+  go func() { messages <- "another message" }()
+  msg := <-messages
+  msg2 := <-messages
+  fmt.Println(msg + " " + msg2)
+}
+
