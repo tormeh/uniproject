@@ -80,7 +80,7 @@
 \begin_body
 
 \begin_layout Title
-Light Weight Threads and Their Synchronization Primitives
+Light Weight Threads and Their Communication Primitives
 \end_layout
 
 \begin_layout Author
@@ -123,11 +123,41 @@ I want to be evaluated on both this report and the attached C code.
 
 \begin_layout Section
 memo to self: paste code with edit->paste special->plain text, fix conclusion
- on stm
+ on stm, CSP
 \end_layout
 
 \begin_layout Part
-Introduction
+Introduction: The Indeterminism Problem
+\end_layout
+
+\begin_layout Standard
+If you've ever written concurrent code, you might have noticed that you
+ are pretty bad at writing that code.
+ I certainly have.
+ The nice thing about conventional code executing from top to bottom is
+ that there aren't really any surprises.
+ As my first programming teacher told me: if something goes wrong the bug
+ is further up in the text file (accomodating code flow between functions
+ etc.).
+ This doesn't really work with concurrent code, you might have discovered.
+ Concurrent code usually has the nasty feature of having indeterministic
+ execution timing, presenting you with heisenbugs where even reproducing
+ the bug is a challenge.
+ One solution is to try to hold all the possible ways your threads might
+ interact with each other in your head at once, but as the amount of threads
+ doing things grow, this becomes unfeasible.
+ 
+\end_layout
+
+\begin_layout Standard
+How to counter this onslaught on your sanity? One method is to keep the
+ amount of threads working at once down, and using conventional semaphores
+ this is the way you usually do it.
+ But what if you want to use more threads, what then? Well, that's what
+ most of this report is about.
+ Some approaches hide and automatically recover from your faults, others
+ make them more predictable so they're easier to find.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -138,8 +168,8 @@ There are many models of concurrency awailable to the modern engineer.
  computers, all with their own memory, processors and network connections.
  Others still, like channel-concurrency, are based on formal or mathematical
  theorems.
- These are the three main means of concurrency, though others have been
- introduced.
+ These are the three main means of concurrent communication, though others
+ have been introduced.
  We will look at some of them in this report.
 \end_layout
 
@@ -248,23 +278,6 @@ newpage
 Background
 \end_layout
 
-\begin_layout Section
-Introduction
-\end_layout
-
-\begin_layout Standard
-There are many models of concurrency awailable to the modern engineer.
- The classic semaphore and its relative - lock - are the most native to
- the way our processors look, with shared memory between thread hardware.
- Others, like the actor model, copy a distributed architecture with several
- computers, all with their own memory, processors and network connections.
- Others still, like channel-concurrency, are based on formal or mathematical
- theorems.
- These are the three main means of concurrency, though others have been
- introduced.
- We will look at some of them here.
-\end_layout
-
 \begin_layout Subsection
 Tl;DR
 \end_layout
@@ -295,7 +308,7 @@ onal Memory, is a kind of optimistic semaphore technique where changes are
 Channel
 \emph default
 : This is the CSP family and its derivatives.
- Go, Rust and Occam have concurrency mechanisms based on channels.
+ Go, Rust, Haskell and Occam have concurrency mechanisms based on channels.
  Focus on being deterministic and formally analyzable.
  Uses multi-sender, multi-receiver (first to read) synchronous channels.
 \end_layout
@@ -383,6 +396,26 @@ Let there be no mistake: In switching from OS threads with semaphores to
 
 \begin_layout Section
 Lightweight threads and synchronization
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Lightweight Thread
+\end_layout
+
+\end_inset
+
+
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Synchronization
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -393,7 +426,20 @@ Lightweight threads and synchronization mechanisms are different things
  present, bug-free concurrent code must become easier to write.
  Since they share motivations, seeing them together is the norm.
  If your aim is to create a better way to write concurrent code, why only
- go half way, after all? 
+ go half way, after all? And frankly, wanting lightweight threads so you
+ can debug even more threads running with semaphores doesn't make sense
+ to me.
+ In fact that sounds like a mixture of masochism, code golf and performance
+ art.
+\end_layout
+
+\begin_layout Standard
+Lightweight threads have influenced the design of modern synchronization
+ mechanisms.
+ Since having lots of lightweight threads and switching between them is
+ cheap, blocking calls also become cheap.
+ Consequently, both the actor- and CSP-model can afford to have their threads
+ mostly sitting around waiting for messages.
 \end_layout
 
 \begin_layout Section
@@ -543,7 +589,11 @@ Both are problems when we want to ensure correctness or debug the program
  it would otherwise be, but the formal analysis of such a system can still
  be an unsolveable problem due to the amount of states the software can
  be in.
- Consider the queues of actors
+ Consider the queues of messages actors have.
+ Their content, even their types, are hard to predict at compile time.
+ The sequence messages arrive in is nondeterministic and, Heisenberg-like,
+ is changed if you try to observe it.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -823,6 +873,22 @@ This program runs for 800 milliseconds and has three threads.
  After 800 milliseconds the integer is 0 again.
  At least that's what I think it does.
  
+\end_layout
+
+\begin_layout Paragraph
+Handling large STM variables
+\end_layout
+
+\begin_layout Standard
+My explanation of STM above has a problem in it: What if the STM variable
+ is really really large? In the real world, STM algorithms do not copy,
+ but use logs of the specific thing they read and write: A read-set and
+ a write-set.
+ Copies will necessarily have to be made, but if you only read and write
+ to element 23438 in the array then whether the other variables have been
+ changed during operation doesn't matter.
+ Not only does this improve performance, but other threads can work concurrently
+ on other parts of the array without much conflict.
 \end_layout
 
 \begin_layout Section
@@ -1568,7 +1634,7 @@ Parallel statements are very attractive, because they can make our code
 \end_layout
 
 \begin_layout Subsection
-Occam's PAR
+Occam's PAR (without messages)
 \begin_inset Index idx
 status open
 
@@ -1659,29 +1725,18 @@ PROC Main(CHAN OF SP fs,ts)
 \end_layout
 
 \begin_layout Standard
-...
- can be replicated in Scala like this using futures:
-\begin_inset CommandInset label
-LatexCommand label
-name "Future example"
+...has x and y be computed in parallel and then combined into z.
+ The same thingcan be done with futures, and in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Scala future example"
 
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-Obviously, this is a good deal more cumbersome than the Occam syntax and
- probably has more overhead, but the general idea of 
-\begin_inset Quotes eld
-\end_inset
-
-do these things in parallel and then combine them
-\begin_inset Quotes erd
-\end_inset
-
- is alive and well, though modern replacements tend to be less streamlined
- for this purpose and have additional bells and whistles.
+ we have a corresponding example in Scala.
+ Of course a function inside a PAR can send messages to another inside the
+ same PAR, while it is not unthinkable that other parallel statement constructs
+ in other languages can do the same, it is usually not the intended use.
 \end_layout
 
 \begin_layout Subsection
@@ -1868,7 +1923,14 @@ fn main()
 \end_layout
 
 \begin_layout Standard
-Scala
+Scala 
+\begin_inset CommandInset label
+LatexCommand label
+name "Scala future example"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2022,6 +2084,7 @@ While Haskell does the same like this:
 
 \begin_layout Standard
 \begin_inset listings
+lstparams "breaklines=true,frame=lrtb,language=Haskell,showstringspaces=false"
 inline false
 status open
 
@@ -2059,7 +2122,7 @@ It is noteworthy that rpar makes this evaluation lazy, a sort of future
 
 \begin_layout Standard
 This type of concurrency is actually not too hard to achieve in C.
- Yours truly have made an attempt:
+ Yours truly have made an admittedly array[int]->array[int] attempt:
 \end_layout
 
 \begin_layout Standard
@@ -2942,6 +3005,16 @@ status open
 agent send (_ + 1)
 \end_layout
 
+\begin_layout Plain Layout
+
+//or, if you want to be consistent in your anonymous function syntax:
+\end_layout
+
+\begin_layout Plain Layout
+
+agent send (x=>x+1)
+\end_layout
+
 \end_inset
 
 This is an important reminder that even STM does not let you write concurrent
@@ -3010,7 +3083,16 @@ fork-join dispatching
 
 \begin_layout Standard
 Juicy stuff.
- This is what Go and Akka uses by default.
+ This is what Go and Akka uses by default, and with good reason.
+ In actor or channel concurrency most lightweight threads sit around waiting
+ for messages at any given time.
+ That's fine as long as the lightweight threads doing work are spread out
+ roughly equally over the OS threads.
+ But what if they aren't? What if all the lightweight threads doing work
+ at any given time are on a single OS thread? Well, then you've written
+ a multithreaded program where a only one thread at a time does any work.
+ Fortunately, this dispatching method fixes the problem when applied correctly.
+ So read on.
 \end_layout
 
 \begin_layout Standard
@@ -3023,10 +3105,12 @@ steal
 \begin_inset Quotes erd
 \end_inset
 
- tasks from a thread that's still busy.
+ tasks from a thread that's still busy.To avoid overworking the scheduling
+ problem tasks are grouped in groups, which makes the following thread a
+ bit hard to understand.
  What happens is that the tasks are grouped in a single group and pushed
  on a stack.
- Each real thread can then pop a group of task and either split the group
+ Each real thread can then pop a group of tasks and either split the group
  and push the resulting groups or execute the group.
  In general, real threads will only execute very small groups, splitting
  groups instead if they're too large.
@@ -3067,6 +3151,12 @@ work stealing
  common to all N real threads.
 \end_layout
 
+\begin_layout Standard
+The first variant is handy if the tasks are messages to be processed, but
+ if the tasks are the lightweight threads then you need the work stealing
+ from the second method.
+\end_layout
+
 \begin_layout Section
 Conclusion
 \end_layout
@@ -3080,10 +3170,7 @@ The popular approaches taken to concurrency in modern languages can be roughly
  fault-tolerant systems.
  Users of CSP often want lower-level concurrency mechanisms that are easier
  to reason about and more predictable.
- STM users generally want C-like concurrency with the synchronisation chores
- handled by the langauge.
- <-weak on STM.
- Fix.
+ STM and parallel statements work neatly with both paradigms.
 \end_layout
 
 \begin_layout Paragraph
