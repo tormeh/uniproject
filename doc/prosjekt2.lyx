@@ -353,6 +353,11 @@ Paralell statements
  paralell pipes.
  There's also parallel transformations of lists, which is particularly easy
  to do for the programmer.
+ Often characterised as data-parallelism, as opposed to task-parallelism.
+\end_layout
+
+\begin_layout Itemize
+Pipelining: Say you 
 \end_layout
 
 \begin_layout Itemize
@@ -365,6 +370,29 @@ Synchronous execution: Threads execute in synchrony, resulting in complete
 Lightweight threads that are less omputationally costly to deal with than
  OS threads, which in turn are less costly than processes.
  Details differ from implementation to implementation.
+\end_layout
+
+\begin_layout Section
+Not Included: Cray's Chapel
+\end_layout
+
+\begin_layout Standard
+Most of what's covered in this report is pretty new, but at least somewhat
+ mature.
+ In order for programming languages to mature a lot of time is needed, and
+ even the newest, not-out-of-beta-yet language here, Rust, is transitioning
+ to being used in production right now.
+ They also cover reasonably common scenarios: PC hardware, maybe with some
+ distributed computing tossed in.
+ Cray, a company making supercomputers, is cooperating with academics and
+ other interested parties in making a new open source programming language
+ for supercomputing: Chapel.
+ Supercomputing has long been the domain of C/C++ and FORTRAN.
+ Chapel is tasked with bringing supercomputer programming closer to the
+ convenience of mainstream (Java, Python, Matlab etc.) while sacrificing
+ no low-level control and providing as many parallel computation paradigms
+ as possible.
+ This could lead to exciting things in the future.
 \end_layout
 
 \begin_layout Section
@@ -2830,6 +2858,10 @@ Parallel statements are very attractive, because they can make our code
 \end_layout
 
 \begin_layout Subsection
+Cray's Chapel forall
+\end_layout
+
+\begin_layout Subsection
 Occam's PAR (without messages)
 \begin_inset Index idx
 status open
@@ -3798,6 +3830,35 @@ This might not be the best way to do it, but it is fairly transparent to
  no need for mutexes, semaphores or other such mechanisms.
 \end_layout
 
+\begin_layout Standard
+Scala's parallel statements are actually classes with parallel methods,
+ so-called parallel collections.
+ There are many ways these can be used and you can map, fold, filter and
+ foreach on them in parallel.
+ As all of these functions require input functions to work, the types of
+ functions you use are important.
+ The docs warn:
+\end_layout
+
+\begin_layout Itemize
+Side-effecting operations can lead to non-determinism 
+\end_layout
+
+\begin_layout Itemize
+Non-associative operations lead to non-determinism
+\end_layout
+
+\begin_layout Standard
+Having experienced something like this myself my advice would be to not
+ have references to parallel collections, but rather immediately transform
+ them to sequential ones, or at least not pass parallel collections between
+ functions.
+ It's easy to forget that the collections you are working with are not determini
+stic for certain operations.
+ Languages like Haskell, where side-effects are more controlled, have an
+ advantage here, as side-effecting operations are discouraged.
+\end_layout
+
 \begin_layout Section
 Actors, Futures and STM, Together.
  
@@ -4596,7 +4657,136 @@ From two to three threads we also see mutex contention being a much lesser
 \end_layout
 
 \begin_layout Section
-The Structure of the Prototype
+The Structure of the Prototype.
+ Or, a brief Documentation
+\end_layout
+
+\begin_layout Standard
+All debug printouts left intact.
+\end_layout
+
+\begin_layout Standard
+The prototype has 3 coroutines that prints messages and otherwise yield,
+ resume etc.
+ Their functionality is held in the functions printfoo, printbaz and printlol.
+ They all use a Duff's Device-inspired switch-case to handle yield and resume.
+\end_layout
+
+\begin_layout Itemize
+printfoo prints foo and sends messages to printbaz
+\end_layout
+
+\begin_layout Itemize
+printbaz prints baz and receives messages from foo
+\end_layout
+
+\begin_layout Itemize
+printlol prints lol and goes in a loop, randomly yielding.
+\end_layout
+
+\begin_layout Standard
+The coroutines have 7 functions to handle bookkeeping when yielding.
+ These are retsend, retrecv, rettryrecv, retcont, retloop, retfin and retsleep.
+ All, like retcont, do continuation bookkeeping, except retfin, which doesn't
+ need to.
+\end_layout
+
+\begin_layout Itemize
+retsend yields and instructs the scheduler to place a specified message
+ on the specified channel.
+ Scheduler resumes coroutine when message sent.
+\end_layout
+
+\begin_layout Itemize
+retrecv yields and instructs the scheduler to resume when a message has
+ been received on the specified channel; blocking receive.
+\end_layout
+
+\begin_layout Itemize
+rettryrecv yields and instructs the scheduler to resume the coroutine, receiving
+ a message on the specified channel if one is available; non-blocking receive.
+\end_layout
+
+\begin_layout Itemize
+retcont yields and instructs the scheduler to resume at the specified continuati
+on.
+\end_layout
+
+\begin_layout Itemize
+retloop yields and instructs the scheduler to resume at the start of the
+ function the coroutine is executing.
+\end_layout
+
+\begin_layout Itemize
+retfin yields and instructs the scheduler to never resume.
+\end_layout
+
+\begin_layout Itemize
+retsleep yields and instructs the scheduler to only resume after a specified
+ amount of time.
+\end_layout
+
+\begin_layout Standard
+rettryrecv and retsleep are untested but may work.
+ They're mostly there for illustration purposes.
+\end_layout
+
+\begin_layout Standard
+There are five structs:
+\end_layout
+
+\begin_layout Itemize
+Datastruct holds the data the routines do work on.
+ One per coroutine.
+\end_layout
+
+\begin_layout Itemize
+Comstruct holds communication information; what channel the thread is communicat
+ing over and the message it is sending or receiving.
+ One per coroutine.
+\end_layout
+
+\begin_layout Itemize
+Sysstruct holds instructions for the scheduler, like whether the coroutine
+ is sending, receiving or is ready for continuation and the place it is
+ ready for continuation.
+ One per coroutine.
+\end_layout
+
+\begin_layout Itemize
+ThreadArgument holds the POSIX thread creation arguments.
+ It houses mutexes and pointers to all other structs as well as the threadid
+ and the arraylen/amount of coroutines the thread is responsible for.
+ One per POSIX thread.
+\end_layout
+
+\begin_layout Itemize
+Channel holds messages and state of a channel.
+ One per channel.
+\end_layout
+
+\begin_layout Standard
+What remains are three functions: scheduler, coroutines and main.
+\end_layout
+
+\begin_layout Itemize
+scheduler is the scheduler.
+ It's a huge mess, but then again, it's a 
+\emph on
+scheduler
+\emph default
+.
+\end_layout
+
+\begin_layout Itemize
+coroutines stuff away the work of spawning the POSIX threads and everything
+ related.
+ It builds the ThreadArguments and creates the mutexes.
+\end_layout
+
+\begin_layout Itemize
+main is a mix of what the user of the prototype should do and what a user
+ should definitely not have to do.
 \end_layout
 
 \begin_layout Bibliography
@@ -4641,6 +4831,17 @@ key "Akka actorRefs"
 \end_inset
 
 http://doc.akka.io/docs/akka/snapshot/general/addressing.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "Scala parcollections"
+key "Scala parcollections"
+
+\end_inset
+
+http://docs.scala-lang.org/overviews/parallel-collections/overview.html
 \end_layout
 
 \begin_layout Standard
