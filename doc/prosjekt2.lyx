@@ -578,28 +578,6 @@ Akka's actors have no stack.
 \end_layout
 
 \begin_layout Section
-CSP Theory
-\begin_inset Index idx
-status open
-
-\begin_layout Plain Layout
-CSP
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-This part is strictly optional.
- The Communicating Sequential Processes theory describes a way for parallel
- computation to be done in which the traditional shared-memory errors like
- race conditions are not possible.
- CSP introduces processes and events.
-\end_layout
-
-\begin_layout Section
 The Conflict Between Fault Tolerance and Verification/Debugging
 \end_layout
 
@@ -2840,7 +2818,50 @@ Esterel is hard to get hold of as a private individual, is a niche language
 \end_layout
 
 \begin_layout Section
-Parallel Statemens
+Pipelining
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename pipeline.svg
+	lyxscale 5
+	width 100text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you have a constantly incoming stream of data coming in to the leftmost
+ block in the picture, you have an opportunity to pipeline.
+ This concept should be familiar to you if you've ever studied processor
+ design, where pipelining means you piece up computations into small parts
+ that can be done after each other.
+ If you've got a lot of similar computations coming in after each other
+ then you can do each step in parallel.
+ Think of how an assembly line doesn't necessarily make any given car faster
+ than manual assembly, but since each step is done in parallel you get figures
+ like 
+\begin_inset Quotes eld
+\end_inset
+
+3 cars per second
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+That's the concept here as well.
+ If you place each step on its own processor core, you have an assembly
+ line for computation.
+ LabView uses this.
+\end_layout
+
+\begin_layout Section
+Parallel Statements
 \end_layout
 
 \begin_layout Standard
@@ -3859,6 +3880,44 @@ stic for certain operations.
  advantage here, as side-effecting operations are discouraged.
 \end_layout
 
+\begin_layout Paragraph
+Hardware implementations
+\end_layout
+
+\begin_layout Standard
+There are some hardware implementations of parallel statements, like SIMD
+ and OpenCL.
+ SIMD (Single Instruction, Multiple Data) is a kind of processor instruction
+ that allows a processor to do exactly what the name states very efficiently.
+ On x86 platforms AVX (Advanced Vector eXtensions) is the name of the instructio
+ns for doing this.
+\end_layout
+
+\begin_layout Standard
+In the same vein, GPUs are very good at taking a lot of floating point numbers
+ and doing the same operation on all of them.
+ Given that a modern AMD GPU has close to 3000 processing units and runs
+ at 1GHz it's given that certain operations are going to be faster on a
+ GPU than on a CPU.
+ This has had a huge impact on many fields, for example in Artificial Intelligen
+ce it was believed that neural networks was inferior to many other techniques.
+ Turns out that when you train the network on a GPU you can afford a lot
+ bigger neural networks and this improves performance so much that lately
+ this has become the best AI technique for many fields.
+ If you've heard some hype about 
+\begin_inset Quotes eld
+\end_inset
+
+deep learning
+\begin_inset Quotes erd
+\end_inset
+
+, that's basically just big neural networks made possible by GPUs and some
+ algorithmic insights that I don't know particularly much about.
+ There are two ways to interface with GPUs: OpenCL and CUDA, of which CUDA
+ is only for Nvidia cards.
+\end_layout
+
 \begin_layout Section
 Actors, Futures and STM, Together.
  
@@ -4662,7 +4721,7 @@ The Structure of the Prototype.
 \end_layout
 
 \begin_layout Standard
-All debug printouts left intact.
+All debug printouts left intact so you can see what's going on more easily.
 \end_layout
 
 \begin_layout Standard
@@ -4776,6 +4835,9 @@ scheduler is the scheduler.
 scheduler
 \emph default
 .
+ The POSIX thread returns to this function when a coroutine yields.
+ It then determines what to do next.
+ Passing messages over channels is also done here.
 \end_layout
 
 \begin_layout Itemize
