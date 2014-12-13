@@ -45,9 +45,18 @@
 \index_command default
 \paperfontsize default
 \spacing single
-\use_hyperref false
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
 \papersize default
-\use_geometry false
+\use_geometry true
 \use_amsmath 1
 \use_esint 1
 \use_mhchem 1
@@ -62,6 +71,13 @@
 \shortcut idx
 \color #008000
 \end_index
+\leftmargin 1cm
+\topmargin 1cm
+\rightmargin 1cm
+\bottommargin 2cm
+\headheight 1cm
+\headsep 1cm
+\footskip 1cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -127,6 +143,16 @@ memo to self: paste code with edit->paste special->plain text
 
 \begin_layout Part
 Introduction: The Indeterminism Problem
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Indeterminism
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -369,6 +395,16 @@ Lightweight threads that are less omputationally costly to deal with than
 
 \begin_layout Section
 Not Included: Cray's Chapel
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Chapel
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -392,6 +428,16 @@ Most of what's covered in this report is pretty new, but at least somewhat
 
 \begin_layout Section
 Limitations of Lightweight Threads
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Limitations of Lightweight Threads
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -574,6 +620,16 @@ Akka's actors have no stack.
 
 \begin_layout Section
 The Conflict Between Fault Tolerance and Verification/Debugging
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Fault Tolerance
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -662,6 +718,16 @@ invariant
 
 \begin_layout Section
 Coroutines: Single-thread Interleaved Execution
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Coroutines
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -2488,10 +2554,19 @@ reference "sec:Actors,-Futures-and"
 
 \begin_layout Standard
 Akka actors have many interesting properties.
- For example, actor references are network aware, so one of our DemoActors
- could receive a message with an ActorRef to an actor on another continent
- and it would still respond correctly using the Akka Remote Protocol over
- TCP.
+ For example, actor references are network aware
+\begin_inset Index idx
+status open
+
+\begin_layout Plain Layout
+Network awareness
+\end_layout
+
+\end_inset
+
+, so one of our DemoActors could receive a message with an ActorRef to an
+ actor on another continent and it would still respond correctly using the
+ Akka Remote Protocol over TCP.
  Akka, unlike Erlang, enforces supervision in a similar manner as offered
  by Erlang's OTP.
 \end_layout
@@ -2820,7 +2895,7 @@ Pipelining
 \begin_inset Graphics
 	filename pipeline.svg
 	lyxscale 5
-	width 100text%
+	width 80text%
 
 \end_inset
 
@@ -3007,7 +3082,7 @@ LabView is a proprietary graphical programming language, and as such a bit
 \begin_inset Graphics
 	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/VisParProg.png
 	lyxscale 70
-	width 100text%
+	width 80text%
 
 \end_inset
 
@@ -3378,7 +3453,7 @@ name "C parmap"
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,language=C,showstringspaces=false"
+lstparams "breaklines=true,frame=lrtb,language=C,showstringspaces=false"
 inline false
 status open
 
@@ -4619,7 +4694,7 @@ Of paramount importance in implementing lightweight threads is the scheduler.
 \begin_inset Graphics
 	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/lightLoadedLightThreadsDumbSched.svg
 	lyxscale 70
-	width 100text%
+	width 30text%
 
 \end_inset
 
@@ -4635,7 +4710,7 @@ For lightweight threads that do a fair amount of work the result is a lot
 \begin_inset Graphics
 	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/hevyLoadedLightThreadsDumbSched.svg
 	lyxscale 70
-	width 100text%
+	width 30text%
 
 \end_inset
 
@@ -4668,10 +4743,14 @@ Smarter scheduling with thread-pool dispatching
 \end_layout
 
 \begin_layout Standard
+This is the final scheduler with very light load on the lightweight threads:
+\end_layout
+
+\begin_layout Standard
 \begin_inset Graphics
 	filename lightLoadedLightThreadsSmartSched.svg
 	lyxscale 70
-	width 100text%
+	width 30text%
 
 \end_inset
 
