@@ -74,7 +74,7 @@
 \leftmargin 1cm
 \topmargin 1cm
 \rightmargin 1cm
-\bottommargin 2cm
+\bottommargin 1.5cm
 \headheight 1cm
 \headsep 1cm
 \footskip 1cm
@@ -135,10 +135,6 @@ Evaluation note
 \begin_layout Standard
 I want to be evaluated on both this report and the attached C code.
  
-\end_layout
-
-\begin_layout Section
-memo to self: paste code with edit->paste special->plain text
 \end_layout
 
 \begin_layout Part
@@ -246,7 +242,7 @@ Initially the idea was to make a lightweight threading library for C.
  C and POSIX presented themselves.
  For example, a POSIX thread's argument is the only way it can communicate
  and everything has to be crammed into this one struct.
- The result is a highly unpleasant nesting of structs, nested together with
+ The result is a highly unpleasant nesting of structs, held together with
  pointers.
  Pointers, in turn, turn out to not be typechecked, and any significant
  refactoring resulted in unhelpful runtime errors.
@@ -310,7 +306,22 @@ newpage
 Background
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
+Organization
+\end_layout
+
+\begin_layout Standard
+This part is going to be relatively unorganized.
+ There's no neat progression to concurrency techniques.
+ Some compete and some are used for different things.
+ I don't expect one of the approaches here to become completely dominant,
+ but rather that a mixture of approaches will be used.
+ While I try to keep the introductory material at towards the front and
+ the more intricate material towards the back but some arbitrariness is
+ unavoidable, I think.
+\end_layout
+
+\begin_layout Section
 Tl;DR
 \end_layout
 
@@ -447,10 +458,17 @@ Rust is the newest and hottest language investigated in this project.
 \emph on
 used to have
 \emph default
- only lightweight threads, but due to the many features desirable for threads
- in Rust (ability to call C code etc.) the lightweight threads ended up being
- as heavy to run as OS threads, and Rust's lightweight threads have been
- pushed to a library outside the standard library.
+ only lightweight threads
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Rust heavyweight threads"
+
+\end_inset
+
+, but due to the many features desirable for threads in Rust (ability to
+ call C code etc.) the lightweight threads ended up being as heavy to run
+ as OS threads, and Rust's lightweight threads have been pushed to a library
+ outside the standard library.
  This illustrates an important point: OS threads are not heavyweight just
  to irritate us, they are heavyweight because they have features lightweight
  threads don't.
@@ -748,8 +766,8 @@ resume
  Coroutines are so called because they do co-operative scheduling - yielding
  is entirely voluntary and predictable on the part of the coroutine.
  Coroutines were first done in Assembly by Melvin Conway in 1958, and it's
- easy to understand why - yielding in assembly can be done by simply doing
- a jumping into another 
+ easy to understand why - yielding in assembly can be done by simply jumping
+ into another 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1257,7 +1275,7 @@ Simple example of the related mutex concept:
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=C,showstringspaces=false"
+lstparams "breaklines=true,frame=lrtb,language=C,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -1460,7 +1478,7 @@ n");
 
 \begin_layout Plain Layout
 
-  printf("in main before threads ds.counter=%ld
+  printf("in main before threads counter=%ld
 \backslash
 n", *counter);
 \end_layout
@@ -1690,7 +1708,9 @@ Of course it's done a bit more smartly than this in serious implementations,
 STM implementations do not have guarantees pleasing to the ear of a real-time
  engineer.
  Typically, operations will be done eventually, in arbitrary sequence.
- 
+ Unless something smart is done I don't see anything preventing starvation
+ of a thread doing a particularly lengthy operation on an STM variable when
+ others are doing short ones.
 \end_layout
 
 \begin_layout Standard
@@ -1704,7 +1724,7 @@ Whatever your langauge is, someone's probably made an STM implementation
 Here's an example in Haskell (shamelessly taken from 
 \begin_inset CommandInset citation
 LatexCommand cite
-key "key-2"
+key "Haskell STM Example"
 
 \end_inset
 
@@ -1713,7 +1733,7 @@ key "key-2"
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=Haskell,showstringspaces=false"
+lstparams "breaklines=true,frame=lrtb,language=Haskell,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -1843,7 +1863,7 @@ Here's a Clojure example illustrating STM, and this one I've actually written
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "frame=lrtb"
+lstparams "frame=lrtb,numbers=left"
 inline false
 status open
 
@@ -1879,11 +1899,6 @@ status open
 \begin_layout Plain Layout
 
         (alter x inc)
-\end_layout
-
-\begin_layout Plain Layout
-
-        (comment println (format "in increment %d" @x))
 \end_layout
 
 \begin_layout Plain Layout
@@ -1943,11 +1958,6 @@ status open
 \begin_layout Plain Layout
 
         (alter x dec)
-\end_layout
-
-\begin_layout Plain Layout
-
-        (comment println (format "in decrement %d" @x))
 \end_layout
 
 \begin_layout Plain Layout
@@ -2113,8 +2123,8 @@ My explanation of STM above has a problem in it: What if the STM variable
  Copies or records will necessarily have to be made, but if you only read
  and write to element 23438 in the array then whether the other variables
  have been changed during operation doesn't matter.
- Not only does this improve performance, but other threads can work concurrently
- on other parts of the array without much conflict.
+ Not only does this improve memory usage, but other threads can work concurrentl
+y on other parts of the array without much conflict.
 \end_layout
 
 \begin_layout Section
@@ -2129,6 +2139,13 @@ Channels
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+A channel is a communication primitive between threads.
+ A channel, as used in Go, Rust and CSP, can have several senders and recipients.
+ Each message can typically only be received once, so multiple receivers
+ is not a broadcast mechanism, but rather a work division mechanism.
 \end_layout
 
 \begin_layout Standard
@@ -2227,7 +2244,7 @@ Go takes a more imperative approach, and accidental data sharing is easier
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,showstringspaces=false"
+lstparams "breaklines=true,frame=lrtb,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -2660,7 +2677,8 @@ For Erlang, the actor model is the beginning and the end.
 \end_layout
 
 \begin_layout Standard
-flushing (timeout 0)/selective receives
+Erlang can use something called selective receives to prioritize certain
+ kinds of messages.
 \end_layout
 
 \begin_layout Standard
@@ -2866,7 +2884,7 @@ exciting
 execute in synchronous time
 \emph default
 .
- Put diferently, Esterel has a global clock that threads march in lockstep
+ Put differently, Esterel has a global clock that threads march in lockstep
  to! A thread has a loop and one cycle of that loop is ompleted per tick
  of the global clock.
  Esterel is completely deterministic; neither dynamic memory nor spawning
@@ -2895,7 +2913,7 @@ Pipelining
 \begin_inset Graphics
 	filename pipeline.svg
 	lyxscale 5
-	width 80text%
+	width 40text%
 
 \end_inset
 
@@ -2927,7 +2945,14 @@ If you have a constantly incoming stream of data coming in to the leftmost
 That's the concept here as well.
  If you place each step on its own processor core, you have an assembly
  line for computation.
- LabView uses this.
+ LabView uses this
+\begin_inset CommandInset citation
+LatexCommand cite
+key "LabView parallelism"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
@@ -2946,10 +2971,6 @@ Parallel statements are very attractive, because they can make our code
  as guidelines where this tradeoff is outsourced to the compiler.
  Others, like Scala, does exactly what you tell them, and there you should
  not use parallel statements unless your workload is heavy enough.
-\end_layout
-
-\begin_layout Subsection
-Cray's Chapel forall
 \end_layout
 
 \begin_layout Subsection
@@ -2974,7 +2995,14 @@ Unfortunately it proved troublesome to get one of the Occam compilers going
 \end_layout
 
 \begin_layout Standard
-For example this (admittedly completely paper-programmed) Occam snippet...
+For example this (admittedly completely paper-programmed) Occam snippet
+\begin_inset CommandInset label
+LatexCommand label
+name "Occam PAR"
+
+\end_inset
+
+...
 \end_layout
 
 \begin_layout Standard
@@ -3082,7 +3110,7 @@ LabView is a proprietary graphical programming language, and as such a bit
 \begin_inset Graphics
 	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/VisParProg.png
 	lyxscale 70
-	width 80text%
+	width 40text%
 
 \end_inset
 
@@ -3096,6 +3124,12 @@ I had problems getting hold of labview screnshots with an appropriate license.
  new data.
  As the dataflows branch, you can see the potential for paralellism.
  Block a and block b are completely independent and LabView can (and will)
+\begin_inset CommandInset citation
+LatexCommand cite
+key "LabView parallelism"
+
+\end_inset
+
  therefore execute them in paralell.
  In the end it all gets fed into a sink, for example a controller or a print
  to memory or screen.
@@ -3108,7 +3142,7 @@ An Occam programmer may express the sequence pictured above like this:
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "frame=lrtb,language=ML,numbers=left,showstringspaces=false"
+lstparams "frame=lrtb,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -3147,21 +3181,17 @@ SEQ
 
 \end_layout
 
-\begin_layout Standard
-http://www.ni.com/white-paper/6422/en/
-\end_layout
-
-\begin_layout Standard
-http://zone.ni.com/reference/en-XX/help/370622K-01/lvrtbestpractices/rt_priorities
-/
-\end_layout
-
 \begin_layout Subsection
 Futures
 \end_layout
 
 \begin_layout Standard
-Here's a Rust example of the use of a Future
+A future is an [insert value here]-value.
+ It represents the result of a computation that may or may not have finished
+ yet.
+ It's a feature for requesting a computation and getting the results (including
+ side effects) later.
+ Here's a Rust example of the use of a Future
 \begin_inset CommandInset label
 LatexCommand label
 name "Future example2"
@@ -3242,14 +3272,21 @@ fn main()
 \end_layout
 
 \begin_layout Standard
-Scala 
+This Scala example 
 \begin_inset CommandInset label
 LatexCommand label
 name "Scala future example"
 
 \end_inset
 
+ does the same as the Occam one in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Occam PAR"
 
+\end_inset
+
+, just with futures:
 \end_layout
 
 \begin_layout Standard
@@ -3403,7 +3440,7 @@ While Haskell does the same like this:
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=Haskell,showstringspaces=false"
+lstparams "breaklines=true,frame=lrtb,language=Haskell,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -3453,7 +3490,7 @@ name "C parmap"
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=C,showstringspaces=false"
+lstparams "breaklines=true,frame=lrtb,language=C,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -3971,9 +4008,9 @@ In the same vein, GPUs are very good at taking a lot of floating point numbers
  GPU than on a CPU.
  This has had a huge impact on many fields, for example in Artificial Intelligen
 ce it was believed that neural networks was inferior to many other techniques.
- Turns out that when you train the network on a GPU you can afford a lot
- bigger neural networks and this improves performance so much that lately
- this has become the best AI technique for many fields.
+ Turns out that when you train the network on a GPU you can afford bigger
+ neural networks and this improves performance so much that lately this
+ has become the best AI technique for many fields.
  If you've heard some hype about 
 \begin_inset Quotes eld
 \end_inset
@@ -4049,7 +4086,7 @@ A waits on B and B waits on A
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "breaklines=true,frame=lrtb,language=scala,numbers=left"
+lstparams "breaklines=true,frame=lrtb,language=scala,numbers=left,showstringspaces=false"
 inline false
 status open
 
@@ -4390,6 +4427,7 @@ An interesting problem occured when I tested this.
  A way to get around this is to increment the value instead of assigning
  to it, like so: 
 \begin_inset listings
+lstparams "frame=lrtb,numbers=left"
 inline false
 status open
 
@@ -4431,7 +4469,7 @@ Scheduling
 
 \begin_layout Standard
 If you are goin to run N lightweight threads on M OS threads, you'll have
- to spread the tasks over, or dispatch them to, the OS threads, somehow.
+ to spread the tasks over, or dispatch them to, the OS threads somehow.
  What I'm saying is that you have to write a scheduler.
  As someone who has done that while writing this: Oy vey, woe be you.
  It's not a particularly easy task, but some smart people have thought about
@@ -4663,7 +4701,7 @@ Prototype
 \end_layout
 
 \begin_layout Standard
-A prototype can be seen in 
+A prototype for parmap can be seen in 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "C parmap"
@@ -4694,7 +4732,7 @@ Of paramount importance in implementing lightweight threads is the scheduler.
 \begin_inset Graphics
 	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/lightLoadedLightThreadsDumbSched.svg
 	lyxscale 70
-	width 30text%
+	width 40text%
 
 \end_inset
 
@@ -4710,7 +4748,7 @@ For lightweight threads that do a fair amount of work the result is a lot
 \begin_inset Graphics
 	filename /home/tormod/Documents/skole/fall2014/uniproject/doc/hevyLoadedLightThreadsDumbSched.svg
 	lyxscale 70
-	width 30text%
+	width 40text%
 
 \end_inset
 
@@ -4750,7 +4788,7 @@ This is the final scheduler with very light load on the lightweight threads:
 \begin_inset Graphics
 	filename lightLoadedLightThreadsSmartSched.svg
 	lyxscale 70
-	width 30text%
+	width 40text%
 
 \end_inset
 
@@ -4758,9 +4796,8 @@ This is the final scheduler with very light load on the lightweight threads:
 \end_layout
 
 \begin_layout Standard
-This is the final scheduler with very light load on the lightweight threads.
- I wouldn't compare seconds across graphs, because I have been very incosistent
- about number of iterations etc.
+Again, I wouldn't compare seconds across graphs, because I have been very
+ incosistent about number of iterations etc.
  Unfortunately, the final scheduler is unable to cope with more than one
  OS thread per lightweight thread, so that's why the threads don't go to
  seven here.
@@ -4913,6 +4950,11 @@ scheduler
  It then determines what to do next.
  Passing messages over channels is also done here in order to keep the mutexes
  out of user functions.
+ The grand theme of what happens in the scheduler is that the OS thread
+ goes over its coroutines in a loop, treating them according to their waitstate.
+ If a thread is seen as hogging or blocking shared resources it will usleep
+ a bit so as to not do exactly that.
+ 
 \end_layout
 
 \begin_layout Itemize
@@ -4985,6 +5027,28 @@ key "Scala parcollections"
 \end_inset
 
 http://docs.scala-lang.org/overviews/parallel-collections/overview.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "Rust heavyweight threads"
+key "Rust heavyweight threads"
+
+\end_inset
+
+https://mail.mozilla.org/pipermail/rust-dev/2013-December/007565.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "LabView parallelism"
+key "LabView parallelism"
+
+\end_inset
+
+Labhttp://www.ni.com/white-paper/6099/en/
 \end_layout
 
 \begin_layout Standard
